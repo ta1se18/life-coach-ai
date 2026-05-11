@@ -55,6 +55,10 @@ export default function HomeScreen() {
     );
   };
 
+  const deleteTodo = (id: string) => {
+    setTodos(todos.filter((item) => item.id !== id));
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>人生TODO</Text>
@@ -78,12 +82,21 @@ export default function HomeScreen() {
         data={todos}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => toggleTodo(item.id)}>
-            <Text style={[styles.todo, item.done && styles.doneTodo]}>
-              {item.done ? '✅ ' : '⬜️ '}
-              {item.text}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.todoRow}>
+            <TouchableOpacity
+              style={styles.todoTextArea}
+              onPress={() => toggleTodo(item.id)}
+            >
+              <Text style={[styles.todo, item.done && styles.doneTodo]}>
+                {item.done ? '✅ ' : '⬜️ '}
+                {item.text}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => deleteTodo(item.id)}>
+              <Text style={styles.delete}>❌</Text>
+            </TouchableOpacity>
+          </View>
         )}
       />
     </View>
@@ -131,13 +144,26 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  todoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  todoTextArea: {
+    flex: 1,
+  },
   todo: {
     color: 'white',
     fontSize: 24,
-    marginBottom: 20,
   },
   doneTodo: {
     textDecorationLine: 'line-through',
     color: '#777',
+  },
+  delete: {
+    color: 'red',
+    fontSize: 20,
+    marginLeft: 12,
   },
 });
