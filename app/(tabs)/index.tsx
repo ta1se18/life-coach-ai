@@ -330,7 +330,7 @@ export default function HomeScreen() {
           />
         </View>
 
-        {currentAge > 0 && gender !== '' && (
+        {currentAge > 0 &&　(
           <View style={styles.lifeBox}>
             <Text style={styles.lifeTitle}>残された時間</Text>
 
