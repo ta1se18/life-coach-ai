@@ -7,11 +7,18 @@ const FEMALE_LIFE = 87.13;
 export default function HomeScreen() {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
+  const [aiType, setAiType] = useState('');
+
   const [likes, setLikes] = useState('');
   const [dislikes, setDislikes] = useState('');
   const [past, setPast] = useState('');
   const [dream, setDream] = useState('');
+
+  const [goalStatus, setGoalStatus] = useState('');
   const [worry, setWorry] = useState('');
+  const [shortGoal, setShortGoal] = useState('');
+  const [middleGoal, setMiddleGoal] = useState('');
+  const [longGoal, setLongGoal] = useState('');
 
   const life =
     gender.includes('男') ? MALE_LIFE :
@@ -23,6 +30,7 @@ export default function HomeScreen() {
   const remaining = useMemo(() => {
     if (!currentAge) return null;
     const years = Math.max(life - currentAge, 0);
+
     return {
       years: years.toFixed(1),
       months: Math.floor(years * 12),
@@ -32,56 +40,63 @@ export default function HomeScreen() {
   }, [currentAge, life]);
 
   const plan = useMemo(() => {
-    const text = `${dream} ${worry} ${likes} ${past}`.toLowerCase();
+    const text = `${dream} ${worry} ${likes} ${past} ${goalStatus}`.toLowerCase();
 
     if (text.includes('起業') || text.includes('事業')) {
       return {
-        analysis: 'あなたは「挑戦」「自由」「自分で人生を切り開くこと」を強く求めている可能性があります。',
-        short: '短期：営業力・発信力・継続力を鍛える。',
-        middle: '中期：市場理解・人脈・小さな収益化を経験する。',
-        long: '長期：自分の理想を形にできる事業を持つ。',
-        today: ['競合サービスを1つ分析する', '事業アイデアを10分書く', '営業・マーケを学ぶ'],
-      };
-    }
-
-    if (text.includes('英語') || text.includes('toeic')) {
-      return {
-        analysis: 'あなたは「成長実感」と「世界を広げること」を大事にしている可能性があります。',
-        short: '短期：毎日英語に触れる習慣を作る。',
-        middle: '中期：TOEICや英会話で成果を出す。',
-        long: '長期：英語を使って選択肢を広げる。',
-        today: ['英単語20個', '英語YouTube15分', '30分だけ集中学習'],
+        analysis: 'あなたは「挑戦」「自由」「自分の力で道を切り開くこと」を重視している可能性があります。',
+        short: shortGoal || '短期：1ヶ月以内に、事業アイデアを1つ言語化し、競合を3つ調べる。',
+        middle: middleGoal || '中期：6ヶ月以内に、見込み顧客に10人ヒアリングし、小さな収益化を試す。',
+        long: longGoal || '長期：3年以内に、自分の理想を形にできる事業を持つ。',
+        today: ['競合サービスを1つ分析する', '事業アイデアを10分書く', '誰のどんな課題を解くか考える'],
       };
     }
 
     if (text.includes('恋愛') || text.includes('彼女') || text.includes('彼氏')) {
       return {
-        analysis: 'あなたは「愛されたい」「人と深く繋がりたい」気持ちが強い可能性があります。',
-        short: '短期：清潔感・会話力・自己肯定感を整える。',
-        middle: '中期：人との関係構築経験を増やす。',
-        long: '長期：安心できるパートナーシップを作る。',
-        today: ['外見を整える', '人と会話する', '自信を失う行動を減らす'],
+        analysis: 'あなたは「愛されること」「人と深くつながること」「自信」を求めている可能性があります。',
+        short: shortGoal || '短期：2週間以内に、外見・清潔感・会話習慣を整える。',
+        middle: middleGoal || '中期：3ヶ月以内に、新しい出会いの場を増やし、会話経験を積む。',
+        long: longGoal || '長期：1年以内に、安心できる関係性を築ける自分になる。',
+        today: ['身だしなみを整える', '1人と丁寧に会話する', '自信を下げる行動を1つ減らす'],
       };
     }
 
-    if (text.includes('不安') || text.includes('焦り')) {
+    if (text.includes('筋トレ') || text.includes('健康') || text.includes('痩せ')) {
       return {
-        analysis: '今は「努力不足」よりも、「方向性不足」で苦しくなっている可能性があります。',
-        short: '短期：やることを減らして、1つに絞る。',
-        middle: '中期：自分の軸を見つける。',
-        long: '長期：迷いが少ない人生設計を作る。',
-        today: ['モヤモヤを書き出す', 'やることを1つに絞る', '今日は早めに寝る'],
+        analysis: 'あなたは「自己管理」「理想の身体」「自信」を大事にしている可能性があります。',
+        short: shortGoal || '短期：1ヶ月以内に、睡眠・食事・運動の型を作る。',
+        middle: middleGoal || '中期：3ヶ月以内に、体型や体力の変化を実感する。',
+        long: longGoal || '長期：1年以内に、健康で自信のある状態を維持する。',
+        today: ['20分運動する', 'タンパク質を意識して食べる', '睡眠時間を確保する'],
+      };
+    }
+
+    if (text.includes('不安') || text.includes('焦り') || text.includes('わからない')) {
+      return {
+        analysis: '今は「努力不足」ではなく、「方向性不足」で苦しくなっている可能性があります。',
+        short: shortGoal || '短期：2週間以内に、自分が何に焦っているのかを言語化する。',
+        middle: middleGoal || '中期：3ヶ月以内に、興味のある領域を3つ試して比較する。',
+        long: longGoal || '長期：1年以内に、自分が納得できる方向性を見つける。',
+        today: ['モヤモヤを書き出す', 'やることを1つに絞る', '今日は小さく1歩だけ進む'],
       };
     }
 
     return {
-      analysis: 'あなたはまだ言語化できていないけど、「このままで終わりたくない」と感じている可能性があります。',
-      short: '短期：自己理解を深める。',
-      middle: '中期：小さな挑戦を増やす。',
-      long: '長期：理想の人生像を見つける。',
-      today: ['理想の人生を書き出す', '興味あることを調べる', '小さく1歩進む'],
+      analysis: 'あなたはまだ言語化しきれていないけれど、「このままで終わりたくない」という感覚を持っている可能性があります。',
+      short: shortGoal || '短期：2週間以内に、好き・嫌い・過去経験を整理する。',
+      middle: middleGoal || '中期：3ヶ月以内に、小さな挑戦を3つ試す。',
+      long: longGoal || '長期：1年以内に、自分が本当に目指したい方向性を見つける。',
+      today: ['理想の人生を10分書く', '興味あることを1つ調べる', '小さく1歩進む'],
     };
-  }, [dream, worry, likes, past]);
+  }, [dream, worry, likes, past, goalStatus, shortGoal, middleGoal, longGoal]);
+
+  const aiMessage = useMemo(() => {
+    if (aiType.includes('熱血')) return '甘えるな。今日の一歩が未来を変える。小さくても動け。';
+    if (aiType.includes('励まし')) return '大丈夫。完璧じゃなくていい。今向き合えている時点で前に進んでる。';
+    if (aiType.includes('お姉')) return 'ちゃんと考えてて偉いよ。でも考えるだけで終わらせないでね。';
+    return 'あなたの価値観・過去経験・目標から、今日の最適行動を整理します。';
+  }, [aiType]);
 
   return (
     <ScrollView style={styles.container}>
@@ -92,7 +107,7 @@ export default function HomeScreen() {
         <Text style={styles.cardTitle}>人生の現在地</Text>
 
         <TextInput style={styles.input} placeholder="年齢 例：21" placeholderTextColor="#999" value={age} onChangeText={setAge} keyboardType="numeric" />
-        <TextInput style={styles.input} placeholder="性別 例：男性 / 女性" placeholderTextColor="#999" value={gender} onChangeText={setGender} />
+        <TextInput style={styles.input} placeholder="性別 例：男性 / 女性 / 未入力でもOK" placeholderTextColor="#999" value={gender} onChangeText={setGender} />
 
         {remaining && (
           <View style={styles.lifeBox}>
@@ -106,13 +121,30 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>AIヒアリング</Text>
+        <Text style={styles.cardTitle}>AIタイプ</Text>
+        <TextInput style={styles.input} placeholder="例：熱血 / 励まし / お姉さん / AIっぽく" placeholderTextColor="#999" value={aiType} onChangeText={setAiType} />
+        <Text style={styles.analysis}>{aiMessage}</Text>
+      </View>
 
-        <TextInput style={styles.textarea} placeholder="好き：スポーツ、YouTube、社会貢献、人間観察" placeholderTextColor="#999" value={likes} onChangeText={setLikes} multiline />
-        <TextInput style={styles.textarea} placeholder="嫌い：早起き、舐められること、英語、掃除" placeholderTextColor="#999" value={dislikes} onChangeText={setDislikes} multiline />
-        <TextInput style={styles.textarea} placeholder="過去：夢中、後悔、大恋愛、人生の転機" placeholderTextColor="#999" value={past} onChangeText={setPast} multiline />
-        <TextInput style={styles.textarea} placeholder="夢・なりたい姿：起業、英語、良いパパ、まだ分からない" placeholderTextColor="#999" value={dream} onChangeText={setDream} multiline />
-        <TextInput style={styles.textarea} placeholder="今の悩み・モヤモヤ" placeholderTextColor="#999" value={worry} onChangeText={setWorry} multiline />
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>AIヒアリング① 自己理解</Text>
+
+        <TextInput style={styles.textarea} placeholder="好き：時間を忘れること、自然に続くこと、憧れる人" placeholderTextColor="#999" value={likes} onChangeText={setLikes} multiline />
+        <TextInput style={styles.textarea} placeholder="嫌い：避けたい環境、苦手な時間、絶対になりたくない姿" placeholderTextColor="#999" value={dislikes} onChangeText={setDislikes} multiline />
+        <TextInput style={styles.textarea} placeholder="過去の経験：悔しかった経験、嬉しかった経験、人生の転機" placeholderTextColor="#999" value={past} onChangeText={setPast} multiline />
+        <TextInput style={styles.textarea} placeholder="なりたい姿：起業、良い父親、影響力ある人、自由に生きる、まだ分からない" placeholderTextColor="#999" value={dream} onChangeText={setDream} multiline />
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>AIヒアリング② 人生設計</Text>
+
+        <TextInput style={styles.textarea} placeholder="目標の状態：既にある / 方向性すら分からない / やりたいことが多すぎる" placeholderTextColor="#999" value={goalStatus} onChangeText={setGoalStatus} multiline />
+        <TextInput style={styles.textarea} placeholder="今の悩み：何を優先すべきか分からない、焦り、不安、行動が分散する" placeholderTextColor="#999" value={worry} onChangeText={setWorry} multiline />
+
+        <Text style={styles.sectionTitle}>既に目標がある人は入力</Text>
+        <TextInput style={styles.input} placeholder="短期目標 例：1ヶ月で〇〇する" placeholderTextColor="#999" value={shortGoal} onChangeText={setShortGoal} />
+        <TextInput style={styles.input} placeholder="中期目標 例：6ヶ月で〇〇する" placeholderTextColor="#999" value={middleGoal} onChangeText={setMiddleGoal} />
+        <TextInput style={styles.input} placeholder="長期目標 例：3年で〇〇する" placeholderTextColor="#999" value={longGoal} onChangeText={setLongGoal} />
       </View>
 
       <View style={styles.card}>
@@ -149,7 +181,7 @@ const styles = StyleSheet.create({
   lifeTitle: { color: '#aaa', fontSize: 15 },
   lifeMain: { color: '#fff', fontSize: 38, fontWeight: 'bold', marginTop: 8 },
   lifeSub: { color: '#ddd', fontSize: 17, marginTop: 6 },
-  analysis: { color: '#111', fontSize: 18, lineHeight: 30, marginBottom: 20 },
+  analysis: { color: '#111', fontSize: 17, lineHeight: 28, marginBottom: 12 },
   sectionTitle: { color: '#111', fontSize: 18, fontWeight: 'bold', marginTop: 14, marginBottom: 8 },
   resultText: { color: '#333', fontSize: 16, lineHeight: 26 },
   todo: { color: '#111', fontSize: 16, lineHeight: 28 },
