@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 type Gender = 'male' | 'female' | '';
 type Phase = 'input' | 'hearing' | 'plan';
@@ -18,7 +25,7 @@ export default function HomeScreen() {
   const [past, setPast] = useState('');
   const [dream, setDream] = useState('');
 
-  const [bigQuestion, setBigQuestion] = useState('');
+  const [worry, setWorry] = useState('');
   const [deepAnswer, setDeepAnswer] = useState('');
   const [deepStep, setDeepStep] = useState(0);
 
@@ -26,12 +33,20 @@ export default function HomeScreen() {
   const [middleTerm, setMiddleTerm] = useState('');
   const [longTerm, setLongTerm] = useState('');
 
-  const life = gender === 'male' ? MALE_LIFE : gender === 'female' ? FEMALE_LIFE : 84;
+  const life =
+    gender === 'male'
+      ? MALE_LIFE
+      : gender === 'female'
+      ? FEMALE_LIFE
+      : 84;
+
   const currentAge = Number(age);
 
   const remaining = useMemo(() => {
     if (!currentAge) return null;
+
     const years = Math.max(life - currentAge, 0);
+
     return {
       years: years.toFixed(1),
       months: Math.floor(years * 12),
@@ -41,29 +56,160 @@ export default function HomeScreen() {
   }, [currentAge, life]);
 
   const deepQuestions = [
-    '本当に成し遂げたいことは何？まだ言語化できなくてもいい。',
-    'それを成し遂げたい理由は？なぜ自分にとって大事？',
-    '逆に、このままだと一番嫌な未来は何？',
-    '今の自分を止めている一番の原因は何？',
-    '今日できる最小の一歩は何？',
+    '最近、何にモヤモヤしてる？',
+    '本当はどんな人生にしたい？',
+    'それを望む理由は？',
+    'このままだと一番嫌な未来は？',
+    '今日できる最小の一歩は？',
   ];
 
-  const currentQuestion = deepQuestions[Math.min(deepStep, deepQuestions.length - 1)];
+  const currentQuestion =
+    deepQuestions[Math.min(deepStep, deepQuestions.length - 1)];
+
+  const generatedPlan = useMemo(() => {
+    const lowerDream = dream.toLowerCase();
+    const lowerWorry = worry.toLowerCase();
+
+    if (
+      lowerDream.includes('起業') ||
+      lowerDream.includes('事業')
+    ) {
+      return {
+        analysis:
+          'あなたは「挑戦」「自由」「自分で人生を切り開くこと」を強く求めている可能性があります。',
+        short:
+          'まずは営業力・発信力・継続力を鍛える。',
+        middle:
+          '市場理解・人脈・小さな収益化を経験する。',
+        long:
+          '自分の理想を形にできる事業を持つ。',
+        today: [
+          '競合サービスを1つ分析する',
+          '事業アイデアを10分書く',
+          '営業・マーケについて学ぶ',
+        ],
+      };
+    }
+
+    if (
+      lowerDream.includes('英語') ||
+      lowerDream.includes('toeic')
+    ) {
+      return {
+        analysis:
+          'あなたは「成長実感」と「世界を広げること」を大事にしている可能性があります。',
+        short:
+          '毎日英語に触れる習慣を作る。',
+        middle:
+          'TOEICや英会話で成果を出す。',
+        long:
+          '英語を使って世界を広げる。',
+        today: [
+          '英単語20個',
+          '英語YouTube15分',
+          '30分だけ集中学習',
+        ],
+      };
+    }
+
+    if (
+      lowerDream.includes('筋トレ') ||
+      lowerDream.includes('健康')
+    ) {
+      return {
+        analysis:
+          'あなたは「自信」「自己管理」「理想の自分」を求めている可能性があります。',
+        short:
+          '睡眠・食事・運動を整える。',
+        middle:
+          '継続できる身体習慣を作る。',
+        long:
+          '健康で自信のある状態を維持する。',
+        today: [
+          '筋トレ20分',
+          '睡眠7時間',
+          '高タンパク食事',
+        ],
+      };
+    }
+
+    if (
+      lowerDream.includes('恋愛') ||
+      lowerDream.includes('彼女') ||
+      lowerDream.includes('彼氏')
+    ) {
+      return {
+        analysis:
+          'あなたは「愛されたい」「人と深く繋がりたい」気持ちが強い可能性があります。',
+        short:
+          '清潔感・会話力・自己肯定感を整える。',
+        middle:
+          '人との関係構築経験を増やす。',
+        long:
+          '安心できるパートナーシップを作る。',
+        today: [
+          '外見を整える',
+          '人と会話する',
+          '自信を失う行動を減らす',
+        ],
+      };
+    }
+
+    if (
+      lowerWorry.includes('不安') ||
+      lowerWorry.includes('焦り')
+    ) {
+      return {
+        analysis:
+          '今は「努力不足」よりも、「方向性不足」で苦しくなっている可能性があります。',
+        short:
+          'まずはやることを減らす。',
+        middle:
+          '自分の軸を見つける。',
+        long:
+          '迷いが少ない人生設計を作る。',
+        today: [
+          'モヤモヤを書き出す',
+          'やることを1つに絞る',
+          '今日は早めに寝る',
+        ],
+      };
+    }
+
+    return {
+      analysis:
+        'あなたはまだ言語化できていないけど、「このままで終わりたくない」と感じている可能性があります。',
+      short:
+        'まずは自己理解を深める。',
+      middle:
+        '小さな挑戦を増やす。',
+      long:
+        '理想の人生像を見つける。',
+      today: [
+        '理想の人生を書き出す',
+        '興味あることを調べる',
+        '小さく1歩進む',
+      ],
+    };
+  }, [dream, worry]);
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.logo}>LIFE COARCH AI</Text>
+
       <Text style={styles.subtitle}>
-        成し遂げたいことと、今日の行動をつなぐAI
+        理想の人生と、今日の行動をつなぐAI
       </Text>
 
       {phase === 'input' && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>まず、人生の現在地</Text>
+          <Text style={styles.cardTitle}>
+            人生の現在地
+          </Text>
 
           <TextInput
             style={styles.input}
-            placeholder="例：22"
+            placeholder="年齢"
             placeholderTextColor="#999"
             value={age}
             onChangeText={setAge}
@@ -72,44 +218,88 @@ export default function HomeScreen() {
 
           <View style={styles.row}>
             <TouchableOpacity
-              style={[styles.choice, gender === 'male' && styles.selected]}
+              style={[
+                styles.choice,
+                gender === 'male' && styles.selected,
+              ]}
               onPress={() => setGender('male')}
             >
-              <Text style={[styles.choiceText, gender === 'male' && styles.selectedText]}>男性</Text>
+              <Text
+                style={[
+                  styles.choiceText,
+                  gender === 'male' && styles.selectedText,
+                ]}
+              >
+                男性
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.choice, gender === 'female' && styles.selected]}
+              style={[
+                styles.choice,
+                gender === 'female' && styles.selected,
+              ]}
               onPress={() => setGender('female')}
             >
-              <Text style={[styles.choiceText, gender === 'female' && styles.selectedText]}>女性</Text>
+              <Text
+                style={[
+                  styles.choiceText,
+                  gender === 'female' && styles.selectedText,
+                ]}
+              >
+                女性
+              </Text>
             </TouchableOpacity>
           </View>
 
           {remaining && (
             <View style={styles.lifeBox}>
-              <Text style={styles.lifeTitle}>残された時間</Text>
-              <Text style={styles.lifeMain}>約 {remaining.years} 年</Text>
-              <Text style={styles.lifeSub}>約 {remaining.months} ヶ月</Text>
-              <Text style={styles.lifeSub}>約 {remaining.weeks} 週間</Text>
-              <Text style={styles.lifeSub}>約 {remaining.days} 日</Text>
-              <Text style={styles.note}>時間は有限。だから今日の行動を決める。</Text>
+              <Text style={styles.lifeTitle}>
+                残された時間
+              </Text>
+
+              <Text style={styles.lifeMain}>
+                約 {remaining.years} 年
+              </Text>
+
+              <Text style={styles.lifeSub}>
+                約 {remaining.months} ヶ月
+              </Text>
+
+              <Text style={styles.lifeSub}>
+                約 {remaining.weeks} 週間
+              </Text>
+
+              <Text style={styles.lifeSub}>
+                約 {remaining.days} 日
+              </Text>
+
+              <Text style={styles.note}>
+                時間は有限。だから今日を決める。
+              </Text>
             </View>
           )}
 
-          <TouchableOpacity style={styles.button} onPress={() => setPhase('hearing')}>
-            <Text style={styles.buttonText}>AIヒアリングへ進む</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => setPhase('hearing')}
+          >
+            <Text style={styles.buttonText}>
+              AIヒアリングへ進む
+            </Text>
           </TouchableOpacity>
         </View>
       )}
 
       {phase === 'hearing' && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>AIヒアリング</Text>
+          <Text style={styles.cardTitle}>
+            AIヒアリング
+          </Text>
 
           <TextInput
             style={styles.textarea}
-            placeholder="例：スポーツ、YouTube、社会貢献、食べ歩き、人間観察"
+            placeholder="好き：スポーツ、YouTube、社会貢献、人間観察"
             placeholderTextColor="#999"
             value={likes}
             onChangeText={setLikes}
@@ -118,7 +308,7 @@ export default function HomeScreen() {
 
           <TextInput
             style={styles.textarea}
-            placeholder="例：早起き、舐められること、英語、掃除"
+            placeholder="嫌い：早起き、舐められること、英語、掃除"
             placeholderTextColor="#999"
             value={dislikes}
             onChangeText={setDislikes}
@@ -127,7 +317,7 @@ export default function HomeScreen() {
 
           <TextInput
             style={styles.textarea}
-            placeholder="例：夢中、後悔、大恋愛、人生の転機、学校行事、大喧嘩、感動"
+            placeholder="過去：夢中、後悔、大恋愛、人生の転機"
             placeholderTextColor="#999"
             value={past}
             onChangeText={setPast}
@@ -136,42 +326,56 @@ export default function HomeScreen() {
 
           <TextInput
             style={styles.textarea}
-            placeholder="例：起業、大谷翔平みたいになりたい、良いパパになりたい、まだ分からない"
+            placeholder="夢・なりたい姿"
             placeholderTextColor="#999"
             value={dream}
             onChangeText={setDream}
             multiline
           />
 
-          <Text style={styles.sectionTitle}>大きな問い</Text>
           <TextInput
             style={styles.textarea}
-            placeholder="例：成し遂げたい欲はあるけど、方向性が分からない"
+            placeholder="今の悩み・モヤモヤ"
             placeholderTextColor="#999"
-            value={bigQuestion}
-            onChangeText={setBigQuestion}
+            value={worry}
+            onChangeText={setWorry}
             multiline
           />
 
           <View style={styles.chatBox}>
-            <Text style={styles.aiLabel}>AIからの深掘り</Text>
-            <Text style={styles.question}>{currentQuestion}</Text>
+            <Text style={styles.aiLabel}>
+              AIからの深掘り
+            </Text>
+
+            <Text style={styles.question}>
+              {currentQuestion}
+            </Text>
 
             <TextInput
               style={styles.textarea}
-              placeholder="今思っていることをそのまま書く"
+              placeholder="今の気持ちをそのまま書く"
               placeholderTextColor="#999"
               value={deepAnswer}
               onChangeText={setDeepAnswer}
               multiline
             />
 
-            <TouchableOpacity style={styles.button} onPress={() => setDeepStep(deepStep + 1)}>
-              <Text style={styles.buttonText}>もう少し深掘りする</Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setDeepStep(deepStep + 1)}
+            >
+              <Text style={styles.buttonText}>
+                もう少し深掘りする
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.subButton} onPress={() => setPhase('plan')}>
-              <Text style={styles.subButtonText}>ここまでで一度計画を作る</Text>
+            <TouchableOpacity
+              style={styles.subButton}
+              onPress={() => setPhase('plan')}
+            >
+              <Text style={styles.subButtonText}>
+                ここまでで計画を作る
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -179,51 +383,79 @@ export default function HomeScreen() {
 
       {phase === 'plan' && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>人生計画 ver.1</Text>
+          <Text style={styles.cardTitle}>
+            人生計画 ver.1
+          </Text>
 
-          <Text style={styles.sectionTitle}>短期計画</Text>
+          <Text style={styles.analysis}>
+            {generatedPlan.analysis}
+          </Text>
+
+          <Text style={styles.sectionTitle}>
+            短期計画
+          </Text>
+
           <TextInput
             style={styles.input}
-            placeholder="例：2週間、1ヶ月、3ヶ月"
+            placeholder="例：2週間、1ヶ月"
             placeholderTextColor="#999"
             value={shortTerm}
             onChangeText={setShortTerm}
           />
+
           <Text style={styles.resultText}>
-            まずは迷いを減らすために、今日できる行動を1つに絞る。
+            {generatedPlan.short}
           </Text>
 
-          <Text style={styles.sectionTitle}>中期計画</Text>
+          <Text style={styles.sectionTitle}>
+            中期計画
+          </Text>
+
           <TextInput
             style={styles.input}
-            placeholder="例：6ヶ月、1年、3年"
+            placeholder="例：6ヶ月、1年"
             placeholderTextColor="#999"
             value={middleTerm}
             onChangeText={setMiddleTerm}
           />
+
           <Text style={styles.resultText}>
-            好き・嫌い・過去経験から、自分の勝ち筋を見つける。
+            {generatedPlan.middle}
           </Text>
 
-          <Text style={styles.sectionTitle}>長期計画</Text>
+          <Text style={styles.sectionTitle}>
+            長期計画
+          </Text>
+
           <TextInput
             style={styles.input}
-            placeholder="例：5年、10年、人生全体"
+            placeholder="例：5年、10年"
             placeholderTextColor="#999"
             value={longTerm}
             onChangeText={setLongTerm}
           />
+
           <Text style={styles.resultText}>
-            {dream ? `「${dream}」に近づく人生設計をする。` : '夢がまだ曖昧なら、夢を見つけること自体を長期目標にする。'}
+            {generatedPlan.long}
           </Text>
 
-          <Text style={styles.sectionTitle}>今日の一歩</Text>
-          <Text style={styles.todo}>1. 今のモヤモヤを10分書き出す</Text>
-          <Text style={styles.todo}>2. 理想に近づく小さな行動を1つやる</Text>
-          <Text style={styles.todo}>3. 夜に「できた/できなかった理由」を1行で記録する</Text>
+          <Text style={styles.sectionTitle}>
+            今日の行動
+          </Text>
 
-          <TouchableOpacity style={styles.subButton} onPress={() => setPhase('hearing')}>
-            <Text style={styles.subButtonText}>もう一度深掘りする</Text>
+          {generatedPlan.today.map((item, index) => (
+            <Text key={index} style={styles.todo}>
+              ・{item}
+            </Text>
+          ))}
+
+          <TouchableOpacity
+            style={styles.subButton}
+            onPress={() => setPhase('hearing')}
+          >
+            <Text style={styles.subButtonText}>
+              もう一度深掘りする
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -232,31 +464,196 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 70, paddingHorizontal: 20 },
-  logo: { color: '#111', fontSize: 36, fontWeight: 'bold' },
-  subtitle: { color: '#555', fontSize: 15, marginTop: 8, marginBottom: 28 },
-  card: { backgroundColor: '#f5f5f5', borderRadius: 18, padding: 18, marginBottom: 20 },
-  cardTitle: { color: '#111', fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
-  input: { backgroundColor: '#fff', color: '#111', padding: 14, borderRadius: 12, marginBottom: 12, fontSize: 16, borderWidth: 1, borderColor: '#ddd' },
-  textarea: { backgroundColor: '#fff', color: '#111', padding: 14, borderRadius: 12, marginBottom: 12, fontSize: 16, minHeight: 90, borderWidth: 1, borderColor: '#ddd' },
-  row: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  choice: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#ddd', backgroundColor: '#fff' },
-  choiceText: { color: '#111', fontWeight: 'bold' },
-  selected: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  selectedText: { color: '#fff' },
-  lifeBox: { backgroundColor: '#111', borderRadius: 18, padding: 18, marginBottom: 18 },
-  lifeTitle: { color: '#aaa', fontSize: 15 },
-  lifeMain: { color: '#fff', fontSize: 38, fontWeight: 'bold', marginTop: 8 },
-  lifeSub: { color: '#ddd', fontSize: 17, marginTop: 6 },
-  note: { color: '#aaa', fontSize: 13, marginTop: 12 },
-  button: { backgroundColor: '#2563eb', padding: 15, borderRadius: 12, alignItems: 'center', marginTop: 8 },
-  buttonText: { color: '#fff', fontWeight: 'bold' },
-  subButton: { borderWidth: 1, borderColor: '#2563eb', padding: 15, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  subButtonText: { color: '#2563eb', fontWeight: 'bold' },
-  sectionTitle: { color: '#111', fontSize: 18, fontWeight: 'bold', marginTop: 14, marginBottom: 8 },
-  chatBox: { backgroundColor: '#eef4ff', borderRadius: 18, padding: 18, marginTop: 10, borderWidth: 1, borderColor: '#bfdbfe' },
-  aiLabel: { color: '#2563eb', fontWeight: 'bold', marginBottom: 8 },
-  question: { color: '#111', fontSize: 22, lineHeight: 32, fontWeight: 'bold', marginBottom: 16 },
-  resultText: { color: '#333', fontSize: 16, lineHeight: 26, marginBottom: 10 },
-  todo: { color: '#111', fontSize: 16, lineHeight: 28 },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop: 70,
+    paddingHorizontal: 20,
+  },
+
+  logo: {
+    color: '#111',
+    fontSize: 36,
+    fontWeight: 'bold',
+  },
+
+  subtitle: {
+    color: '#666',
+    fontSize: 15,
+    marginTop: 8,
+    marginBottom: 28,
+  },
+
+  card: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 20,
+  },
+
+  cardTitle: {
+    color: '#111',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+
+  textarea: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    marginBottom: 12,
+    minHeight: 90,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+
+  row: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+
+  choice: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+
+  choiceText: {
+    color: '#111',
+    fontWeight: 'bold',
+  },
+
+  selected: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+  },
+
+  selectedText: {
+    color: '#fff',
+  },
+
+  lifeBox: {
+    backgroundColor: '#111',
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 18,
+  },
+
+  lifeTitle: {
+    color: '#aaa',
+    fontSize: 15,
+  },
+
+  lifeMain: {
+    color: '#fff',
+    fontSize: 38,
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+
+  lifeSub: {
+    color: '#ddd',
+    fontSize: 17,
+    marginTop: 6,
+  },
+
+  note: {
+    color: '#aaa',
+    marginTop: 12,
+    fontSize: 13,
+  },
+
+  button: {
+    backgroundColor: '#2563eb',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+
+  subButton: {
+    borderWidth: 1,
+    borderColor: '#2563eb',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+
+  subButtonText: {
+    color: '#2563eb',
+    fontWeight: 'bold',
+  },
+
+  chatBox: {
+    backgroundColor: '#eef4ff',
+    borderRadius: 18,
+    padding: 18,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+
+  aiLabel: {
+    color: '#2563eb',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+
+  question: {
+    color: '#111',
+    fontSize: 22,
+    lineHeight: 32,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+
+  analysis: {
+    color: '#111',
+    fontSize: 18,
+    lineHeight: 30,
+    marginBottom: 20,
+  },
+
+  sectionTitle: {
+    color: '#111',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 14,
+    marginBottom: 8,
+  },
+
+  resultText: {
+    color: '#333',
+    fontSize: 16,
+    lineHeight: 26,
+  },
+
+  todo: {
+    color: '#111',
+    fontSize: 16,
+    lineHeight: 28,
+  },
 });
