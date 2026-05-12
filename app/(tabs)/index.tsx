@@ -23,9 +23,10 @@ type Todo = {
   text: string;
   done: boolean;
   category: Category;
+  deadline: string;
 };
 
-const STORAGE_KEY = 'life_todo_items_v3';
+const STORAGE_KEY = 'life_todo_items_v4';
 
 const categories: Category[] = [
   '事業',
@@ -39,6 +40,7 @@ const categories: Category[] = [
 
 export default function HomeScreen() {
   const [todo, setTodo] = useState('');
+  const [deadline, setDeadline] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('事業');
 
   const [freeTime, setFreeTime] = useState('');
@@ -67,10 +69,12 @@ export default function HomeScreen() {
       text: todo.trim(),
       done: false,
       category: selectedCategory,
+      deadline: deadline.trim(),
     };
 
     setTodos([...todos, newTodo]);
     setTodo('');
+    setDeadline('');
   };
 
   const toggleTodo = (id: string) => {
@@ -86,52 +90,92 @@ export default function HomeScreen() {
   };
 
   const completedCount = todos.filter((t) => t.done).length;
-
   const achievementRate =
     todos.length === 0 ? 0 : Math.round((completedCount / todos.length) * 100);
 
   const aiSuggestions = useMemo(() => {
-    const result: { text: string; category: Category }[] = [];
+    const result: { text: string; category: Category; deadline: string }[] = [];
 
     if (dream.includes('起業')) {
-      result.push({ text: '🔥 競合サービスを1つ分析する', category: '事業' });
-      result.push({ text: '📱 アプリ改善点を3つ考える', category: '事業' });
+      result.push({
+        text: '🔥 競合サービスを1つ分析する',
+        category: '事業',
+        deadline: '今日中',
+      });
+      result.push({
+        text: '📱 アプリ改善点を3つ考える',
+        category: '事業',
+        deadline: '今日中',
+      });
     }
 
     if (dream.includes('英語')) {
-      result.push({ text: '🌍 英単語を20個覚える', category: '勉強' });
+      result.push({
+        text: '🌍 英単語を20個覚える',
+        category: '勉強',
+        deadline: '今日中',
+      });
     }
 
     if (condition.includes('疲')) {
-      result.push({ text: '🛌 今日は早めに寝る', category: '健康' });
+      result.push({
+        text: '🛌 今日は早めに寝る',
+        category: '健康',
+        deadline: '今日',
+      });
     }
 
     if (mood.includes('不安')) {
-      result.push({ text: '🧠 不安を書き出して整理する', category: '健康' });
+      result.push({
+        text: '🧠 不安を書き出して整理する',
+        category: '健康',
+        deadline: '今日中',
+      });
     }
 
     if (mood.includes('やる気MAX')) {
-      result.push({ text: '🚀 一番難しいタスクに挑戦する', category: '事業' });
+      result.push({
+        text: '🚀 一番難しいタスクに挑戦する',
+        category: '事業',
+        deadline: '今日中',
+      });
     }
 
     if (freeTime.includes('30分')) {
-      result.push({ text: '⏰ 30分だけ集中して動く', category: 'その他' });
+      result.push({
+        text: '⏰ 30分だけ集中して動く',
+        category: 'その他',
+        deadline: '今から30分',
+      });
     }
 
     if (result.length === 0) {
-      result.push({ text: '📘 理想の人生について10分考える', category: 'その他' });
-      result.push({ text: '🔥 小さくても1歩進む', category: 'その他' });
+      result.push({
+        text: '📘 理想の人生について10分考える',
+        category: 'その他',
+        deadline: '今日中',
+      });
+      result.push({
+        text: '🔥 小さくても1歩進む',
+        category: 'その他',
+        deadline: '今日中',
+      });
     }
 
     return result;
   }, [freeTime, condition, mood, dream]);
 
-  const addSuggestion = (suggestion: { text: string; category: Category }) => {
+  const addSuggestion = (suggestion: {
+    text: string;
+    category: Category;
+    deadline: string;
+  }) => {
     const newTodo: Todo = {
       id: Date.now().toString(),
       text: suggestion.text,
       done: false,
       category: suggestion.category,
+      deadline: suggestion.deadline,
     };
 
     setTodos([...todos, newTodo]);
@@ -192,16 +236,16 @@ export default function HomeScreen() {
           >
             <View>
               <Text style={styles.aiTodo}>{item.text}</Text>
-              <Text style={styles.categorySmall}>{item.category}</Text>
+              <Text style={styles.categorySmall}>
+                {item.category} / 期限：{item.deadline}
+              </Text>
             </View>
 
             <Text style={styles.addSmall}>＋</Text>
           </TouchableOpacity>
         ))}
 
-        <Text style={styles.helpText}>
-          タップするとTODOに追加されます。
-        </Text>
+        <Text style={styles.helpText}>タップするとTODOに追加されます。</Text>
       </View>
 
       <View style={styles.card}>
@@ -219,6 +263,14 @@ export default function HomeScreen() {
           placeholderTextColor="#777"
           value={todo}
           onChangeText={setTodo}
+          style={styles.input}
+        />
+
+        <TextInput
+          placeholder="期限（例：今日中、今週中、3ヶ月以内、25歳まで）"
+          placeholderTextColor="#777"
+          value={deadline}
+          onChangeText={setDeadline}
           style={styles.input}
         />
 
@@ -274,6 +326,12 @@ export default function HomeScreen() {
                       {item.done ? '✅ ' : '⬜️ '}
                       {item.text}
                     </Text>
+
+                    {item.deadline ? (
+                      <Text style={styles.deadline}>期限：{item.deadline}</Text>
+                    ) : (
+                      <Text style={styles.deadline}>期限：未設定</Text>
+                    )}
                   </TouchableOpacity>
 
                   <TouchableOpacity onPress={() => deleteTodo(item.id)}>
@@ -413,6 +471,11 @@ const styles = StyleSheet.create({
   todo: {
     color: 'white',
     fontSize: 20,
+  },
+  deadline: {
+    color: '#888',
+    fontSize: 13,
+    marginTop: 5,
   },
   doneTodo: {
     textDecorationLine: 'line-through',
