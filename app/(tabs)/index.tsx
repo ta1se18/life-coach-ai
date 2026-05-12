@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  FlatList,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,208 +8,159 @@ import {
   View,
 } from 'react-native';
 
-type Category =
-  | '事業'
-  | '健康'
-  | '勉強'
-  | '恋愛'
-  | 'お金'
-  | '人間関係'
-  | 'その他';
+type Gender = 'male' | 'female' | '';
+type AiTone = 'ai' | 'hot' | 'encourage' | 'sister';
 
-type Todo = {
-  id: string;
-  text: string;
-  done: boolean;
-  category: Category;
-  deadline: string;
-};
+const STORAGE_KEY = 'life_coach_ai_original_v1';
 
-const STORAGE_KEY = 'life_todo_items_v5';
-
-const categories: Category[] = [
-  '事業',
-  '健康',
-  '勉強',
-  '恋愛',
-  'お金',
-  '人間関係',
-  'その他',
-];
+const MALE_LIFE_EXPECTANCY = 81.09;
+const FEMALE_LIFE_EXPECTANCY = 87.13;
 
 export default function HomeScreen() {
-  const [todo, setTodo] = useState('');
-  const [deadline, setDeadline] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<Category>('事業');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState<Gender>('');
+  const [status, setStatus] = useState('');
 
-  const [freeTime, setFreeTime] = useState('');
-  const [condition, setCondition] = useState('');
-  const [mood, setMood] = useState('');
+  const [aiTone, setAiTone] = useState<AiTone>('ai');
+
+  const [likes, setLikes] = useState('');
+  const [dislikes, setDislikes] = useState('');
   const [dream, setDream] = useState('');
+  const [past, setPast] = useState('');
 
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const [deepLevel, setDeepLevel] = useState(0);
+  const [deepAnswer, setDeepAnswer] = useState('');
+  const [deepHistory, setDeepHistory] = useState<string[]>([]);
+  const [showPlan, setShowPlan] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      setTodos(JSON.parse(saved));
+      const data = JSON.parse(saved);
+      setAge(data.age || '');
+      setGender(data.gender || '');
+      setStatus(data.status || '');
+      setAiTone(data.aiTone || 'ai');
+      setLikes(data.likes || '');
+      setDislikes(data.dislikes || '');
+      setDream(data.dream || '');
+      setPast(data.past || '');
+      setDeepLevel(data.deepLevel || 0);
+      setDeepAnswer(data.deepAnswer || '');
+      setDeepHistory(data.deepHistory || []);
+      setShowPlan(data.showPlan || false);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-  }, [todos]);
-
-  const completedCount = todos.filter((t) => t.done).length;
-  const achievementRate =
-    todos.length === 0 ? 0 : Math.round((completedCount / todos.length) * 100);
-
-  const coachComment = useMemo(() => {
-    if (todos.length === 0) {
-      return 'まずは1個でいい。今日の自分を前に進める行動を入れよう。';
-    }
-
-    if (achievementRate === 100) {
-      return '今日強すぎ。ちゃんと積み上げたな。この1日が未来の自分を作ってる。';
-    }
-
-    if (achievementRate >= 60) {
-      return 'かなりいい。全部完璧じゃなくても、前に進んでるなら勝ち。';
-    }
-
-    if (achievementRate >= 30) {
-      return '半分近く進めてる。明日はタスクを少し絞って、確実に取り切ろう。';
-    }
-
-    if (condition.includes('疲') || condition.includes('眠')) {
-      return '今日は回復も戦略。無理に詰め込むな。でも小さい一歩だけは残そう。';
-    }
-
-    if (mood.includes('やる気MAX')) {
-      return '今が攻め時。軽いタスクじゃなくて、一番未来に効くやつからいけ。';
-    }
-
-    if (mood.includes('不安') || mood.includes('焦')) {
-      return '不安な時ほど、頭の中で抱えるな。まず1個だけ書き出して潰そう。';
-    }
-
-    return 'まだ終わってない。今日を少しでも前に進めよう。1個でいいから潰せ。';
-  }, [achievementRate, todos.length, condition, mood]);
-
-  const addTodo = () => {
-    if (!todo.trim()) return;
-
-    const newTodo: Todo = {
-      id: Date.now().toString(),
-      text: todo.trim(),
-      done: false,
-      category: selectedCategory,
-      deadline: deadline.trim(),
+    const data = {
+      age,
+      gender,
+      status,
+      aiTone,
+      likes,
+      dislikes,
+      dream,
+      past,
+      deepLevel,
+      deepAnswer,
+      deepHistory,
+      showPlan,
     };
 
-    setTodos([...todos, newTodo]);
-    setTodo('');
-    setDeadline('');
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }, [
+    age,
+    gender,
+    status,
+    aiTone,
+    likes,
+    dislikes,
+    dream,
+    past,
+    deepLevel,
+    deepAnswer,
+    deepHistory,
+    showPlan,
+  ]);
+
+  const lifeExpectancy =
+    gender === 'male'
+      ? MALE_LIFE_EXPECTANCY
+      : gender === 'female'
+      ? FEMALE_LIFE_EXPECTANCY
+      : 84;
+
+  const currentAge = Number(age);
+  const remainingYears =
+    currentAge > 0 ? Math.max(lifeExpectancy - currentAge, 0) : 0;
+
+  const remainingMonths = Math.floor(remainingYears * 12);
+  const remainingWeeks = Math.floor(remainingYears * 52);
+  const remainingDays = Math.floor(remainingYears * 365);
+
+  const questions = [
+    '最近、何にモヤモヤしてる？まだ言葉になってなくてもいい。',
+    '本当はどんな人生にしたい？夢がなくても、「こうはなりたくない」でもいい。',
+    'それを望む理由は何？なぜ自分にとって大事？',
+    'このままだと一番嫌な未来は何？',
+    '過去の経験で、今の自分を作っている出来事は何？',
+    '今の自分のボトルネックは何？時間、体力、能力、環境、人間関係、メンタルのどれが近い？',
+    '今日、現実的にできる最小の一歩は何？',
+  ];
+
+  const currentQuestion = questions[Math.min(deepLevel, questions.length - 1)];
+
+  const saveDeepAnswerAndGoNext = () => {
+    if (deepAnswer.trim()) {
+      setDeepHistory([...deepHistory, deepAnswer.trim()]);
+      setDeepAnswer('');
+    }
+
+    setDeepLevel(deepLevel + 1);
+    setShowPlan(false);
   };
 
-  const toggleTodo = (id: string) => {
-    setTodos(
-      todos.map((item) =>
-        item.id === id ? { ...item, done: !item.done } : item
-      )
-    );
+  const makePlanNow = () => {
+    if (deepAnswer.trim()) {
+      setDeepHistory([...deepHistory, deepAnswer.trim()]);
+      setDeepAnswer('');
+    }
+
+    setShowPlan(true);
   };
 
-  const deleteTodo = (id: string) => {
-    setTodos(todos.filter((item) => item.id !== id));
+  const resetAll = () => {
+    localStorage.removeItem(STORAGE_KEY);
+
+    setAge('');
+    setGender('');
+    setStatus('');
+    setAiTone('ai');
+    setLikes('');
+    setDislikes('');
+    setDream('');
+    setPast('');
+    setDeepLevel(0);
+    setDeepAnswer('');
+    setDeepHistory([]);
+    setShowPlan(false);
   };
 
-  const aiSuggestions = useMemo(() => {
-    const result: { text: string; category: Category; deadline: string }[] = [];
-
-    if (dream.includes('起業')) {
-      result.push({
-        text: '🔥 競合サービスを1つ分析する',
-        category: '事業',
-        deadline: '今日中',
-      });
-      result.push({
-        text: '📱 アプリ改善点を3つ考える',
-        category: '事業',
-        deadline: '今日中',
-      });
+  const getCoachMessage = () => {
+    if (aiTone === 'hot') {
+      return '甘えるな。理想の人生は、今日の一歩でしか変わらない。小さくてもいいから、今すぐ動け。';
     }
 
-    if (dream.includes('英語')) {
-      result.push({
-        text: '🌍 英単語を20個覚える',
-        category: '勉強',
-        deadline: '今日中',
-      });
+    if (aiTone === 'encourage') {
+      return '大丈夫。まだ完璧じゃなくていい。今の自分と向き合えている時点で、もう前に進んでる。';
     }
 
-    if (condition.includes('疲')) {
-      result.push({
-        text: '🛌 今日は早めに寝る',
-        category: '健康',
-        deadline: '今日',
-      });
+    if (aiTone === 'sister') {
+      return 'ちゃんと考えてて偉いよ。でも考えるだけで終わらせないでね。今日は小さく一個だけ動こ。';
     }
 
-    if (mood.includes('不安')) {
-      result.push({
-        text: '🧠 不安を書き出して整理する',
-        category: '健康',
-        deadline: '今日中',
-      });
-    }
-
-    if (mood.includes('やる気MAX')) {
-      result.push({
-        text: '🚀 一番難しいタスクに挑戦する',
-        category: '事業',
-        deadline: '今日中',
-      });
-    }
-
-    if (freeTime.includes('30分')) {
-      result.push({
-        text: '⏰ 30分だけ集中して動く',
-        category: 'その他',
-        deadline: '今から30分',
-      });
-    }
-
-    if (result.length === 0) {
-      result.push({
-        text: '📘 理想の人生について10分考える',
-        category: 'その他',
-        deadline: '今日中',
-      });
-      result.push({
-        text: '🔥 小さくても1歩進む',
-        category: 'その他',
-        deadline: '今日中',
-      });
-    }
-
-    return result;
-  }, [freeTime, condition, mood, dream]);
-
-  const addSuggestion = (suggestion: {
-    text: string;
-    category: Category;
-    deadline: string;
-  }) => {
-    const newTodo: Todo = {
-      id: Date.now().toString(),
-      text: suggestion.text,
-      done: false,
-      category: suggestion.category,
-      deadline: suggestion.deadline,
-    };
-
-    setTodos([...todos, newTodo]);
+    return 'データを分析中。あなたの価値観、過去経験、欲望、制約条件から、今日の最適行動を生成します。';
   };
 
   return (
@@ -218,168 +168,214 @@ export default function HomeScreen() {
       <Text style={styles.title}>LIFE COACH AI</Text>
 
       <Text style={styles.subtitle}>
-        理想の人生と、今日の行動をつなぐ
+        理想の人生と、今日の行動をつなぐ。
       </Text>
 
-      <View style={styles.coachBox}>
-        <Text style={styles.coachTitle}>今日の相棒コメント</Text>
-        <Text style={styles.coachText}>{coachComment}</Text>
-      </View>
-
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>今日の状態</Text>
+        <Text style={styles.cardTitle}>人生の現在地</Text>
 
         <TextInput
-          placeholder="自由時間（例：30分、2時間）"
+          value={age}
+          onChangeText={setAge}
+          placeholder="例：22"
           placeholderTextColor="#777"
-          value={freeTime}
-          onChangeText={setFreeTime}
+          keyboardType="numeric"
           style={styles.input}
         />
 
-        <TextInput
-          placeholder="体調（例：元気、疲れてる）"
-          placeholderTextColor="#777"
-          value={condition}
-          onChangeText={setCondition}
-          style={styles.input}
-        />
-
-        <TextInput
-          placeholder="気分（例：やる気MAX、不安）"
-          placeholderTextColor="#777"
-          value={mood}
-          onChangeText={setMood}
-          style={styles.input}
-        />
-
-        <TextInput
-          placeholder="夢・目標（例：起業、英語）"
-          placeholderTextColor="#777"
-          value={dream}
-          onChangeText={setDream}
-          style={styles.input}
-        />
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>AI提案TODO</Text>
-
-        {aiSuggestions.map((item, index) => (
+        <View style={styles.row}>
           <TouchableOpacity
-            key={index}
-            style={styles.suggestionRow}
-            onPress={() => addSuggestion(item)}
+            style={[styles.selectButton, gender === 'male' && styles.selected]}
+            onPress={() => setGender('male')}
           >
-            <View>
-              <Text style={styles.aiTodo}>{item.text}</Text>
-              <Text style={styles.categorySmall}>
-                {item.category} / 期限：{item.deadline}
-              </Text>
-            </View>
-
-            <Text style={styles.addSmall}>＋</Text>
-          </TouchableOpacity>
-        ))}
-
-        <Text style={styles.helpText}>タップするとTODOに追加されます。</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>達成率 {achievementRate}%</Text>
-        <Text style={styles.rateText}>
-          {completedCount} / {todos.length} 完了
-        </Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>TODOを追加</Text>
-
-        <TextInput
-          placeholder="夢や目標を追加"
-          placeholderTextColor="#777"
-          value={todo}
-          onChangeText={setTodo}
-          style={styles.input}
-        />
-
-        <TextInput
-          placeholder="期限（例：今日中、今週中、3ヶ月以内、25歳まで）"
-          placeholderTextColor="#777"
-          value={deadline}
-          onChangeText={setDeadline}
-          style={styles.input}
-        />
-
-        <Text style={styles.categoryTitle}>カテゴリ</Text>
-
-        <View style={styles.categoryGrid}>
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category}
+            <Text
               style={[
-                styles.categoryButton,
-                selectedCategory === category && styles.selectedCategoryButton,
+                styles.selectText,
+                gender === 'male' && styles.selectedText,
               ]}
-              onPress={() => setSelectedCategory(category)}
+            >
+              男性
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.selectButton, gender === 'female' && styles.selected]}
+            onPress={() => setGender('female')}
+          >
+            <Text
+              style={[
+                styles.selectText,
+                gender === 'female' && styles.selectedText,
+              ]}
+            >
+              女性
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TextInput
+          value={status}
+          onChangeText={setStatus}
+          placeholder="例：大学生、社会人、高校生"
+          placeholderTextColor="#777"
+          style={styles.input}
+        />
+      </View>
+
+      {currentAge > 0 && gender !== '' && (
+        <View style={styles.lifeBox}>
+          <Text style={styles.lifeLabel}>残された時間</Text>
+          <Text style={styles.lifeMain}>約 {remainingYears.toFixed(1)} 年</Text>
+          <Text style={styles.lifeSub}>約 {remainingMonths} ヶ月</Text>
+          <Text style={styles.lifeSub}>約 {remainingWeeks} 週間</Text>
+          <Text style={styles.lifeSub}>約 {remainingDays} 日</Text>
+          <Text style={styles.lifeNote}>
+            時間は有限。だから今日の行動を決める。
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>AIの話し方</Text>
+
+        <View style={styles.toneGrid}>
+          {[
+            ['ai', 'AIっぽさ全開系'],
+            ['hot', '熱血タイプ'],
+            ['encourage', '励まし系'],
+            ['sister', 'お姉さん系'],
+          ].map(([value, label]) => (
+            <TouchableOpacity
+              key={value}
+              style={[styles.toneButton, aiTone === value && styles.selected]}
+              onPress={() => setAiTone(value as AiTone)}
             >
               <Text
                 style={[
-                  styles.categoryText,
-                  selectedCategory === category && styles.selectedCategoryText,
+                  styles.toneText,
+                  aiTone === value && styles.selectedText,
                 ]}
               >
-                {category}
+                {label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
+      </View>
 
-        <TouchableOpacity style={styles.button} onPress={addTodo}>
-          <Text style={styles.buttonText}>追加</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>自己理解ヒアリング</Text>
+
+        <TextInput
+          value={likes}
+          onChangeText={setLikes}
+          placeholder="例：スポーツ、YouTube、社会貢献、食べ歩き、人間観察"
+          placeholderTextColor="#777"
+          multiline
+          style={styles.textarea}
+        />
+
+        <TextInput
+          value={dislikes}
+          onChangeText={setDislikes}
+          placeholder="例：早起き、舐められること、英語、掃除"
+          placeholderTextColor="#777"
+          multiline
+          style={styles.textarea}
+        />
+
+        <TextInput
+          value={dream}
+          onChangeText={setDream}
+          placeholder="例：起業、大谷翔平みたいになりたい、良いパパになりたい、まだ分からない"
+          placeholderTextColor="#777"
+          multiline
+          style={styles.textarea}
+        />
+
+        <TextInput
+          value={past}
+          onChangeText={setPast}
+          placeholder="例：夢中、後悔、大恋愛、人生の転機、学校行事、大喧嘩、感動"
+          placeholderTextColor="#777"
+          multiline
+          style={styles.textarea}
+        />
+      </View>
+
+      <View style={styles.chatBox}>
+        <Text style={styles.aiName}>AIコーチ</Text>
+        <Text style={styles.question}>{currentQuestion}</Text>
+
+        <TextInput
+          value={deepAnswer}
+          onChangeText={setDeepAnswer}
+          placeholder="今思っていることをそのまま書く"
+          placeholderTextColor="#777"
+          multiline
+          style={styles.textarea}
+        />
+
+        <TouchableOpacity style={styles.button} onPress={saveDeepAnswerAndGoNext}>
+          <Text style={styles.buttonText}>もう少し深掘りする</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.subButton} onPress={makePlanNow}>
+          <Text style={styles.subButtonText}>ここまでで計画を作る</Text>
         </TouchableOpacity>
       </View>
 
-      {categories.map((category) => {
-        const categoryTodos = todos.filter((item) => item.category === category);
+      {deepHistory.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>深掘り履歴</Text>
+          {deepHistory.map((item, index) => (
+            <Text key={index} style={styles.history}>
+              {index + 1}. {item}
+            </Text>
+          ))}
+        </View>
+      )}
 
-        if (categoryTodos.length === 0) return null;
+      {showPlan && (
+        <View style={styles.planBox}>
+          <Text style={styles.cardTitle}>人生計画 ver.1</Text>
 
-        return (
-          <View key={category} style={styles.card}>
-            <Text style={styles.cardTitle}>{category}</Text>
+          <Text style={styles.sectionTitle}>長期の方向性</Text>
+          <Text style={styles.resultText}>
+            {dream.trim()
+              ? `「${dream}」に近づく人生設計をする。`
+              : '夢がまだ明確でないため、「自分が本当に望む人生を見つけること」を長期目標にする。'}
+          </Text>
 
-            <FlatList
-              scrollEnabled={false}
-              data={categoryTodos}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <View style={styles.todoRow}>
-                  <TouchableOpacity
-                    style={styles.todoTextArea}
-                    onPress={() => toggleTodo(item.id)}
-                  >
-                    <Text style={[styles.todo, item.done && styles.doneTodo]}>
-                      {item.done ? '✅ ' : '⬜️ '}
-                      {item.text}
-                    </Text>
+          <Text style={styles.sectionTitle}>中期で整えること</Text>
+          <Text style={styles.resultText}>
+            ・好きなこと「{likes || '未入力'}」を行動に変える{'\n'}
+            ・嫌いなこと「{dislikes || '未入力'}」を避ける設計をする{'\n'}
+            ・過去経験「{past || '未入力'}」から、自分の軸を見つける
+          </Text>
 
-                    {item.deadline ? (
-                      <Text style={styles.deadline}>期限：{item.deadline}</Text>
-                    ) : (
-                      <Text style={styles.deadline}>期限：未設定</Text>
-                    )}
-                  </TouchableOpacity>
+          <Text style={styles.sectionTitle}>短期でやること</Text>
+          <Text style={styles.resultText}>
+            ・今日10分だけ、理想の人生について書く{'\n'}
+            ・今のモヤモヤを1つ言語化する{'\n'}
+            ・明日も続けられる最小行動を決める
+          </Text>
 
-                  <TouchableOpacity onPress={() => deleteTodo(item.id)}>
-                    <Text style={styles.delete}>❌</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-          </View>
-        );
-      })}
+          <Text style={styles.sectionTitle}>今日の一歩</Text>
+          <Text style={styles.resultText}>
+            1. 深掘りで出た言葉を1つ選ぶ{'\n'}
+            2. それに関係する小さな行動を1つやる{'\n'}
+            3. 夜に「できた/できなかった理由」を1行で記録する
+          </Text>
+
+          <Text style={styles.sectionTitle}>相棒からの一言</Text>
+          <Text style={styles.resultText}>{getCoachMessage()}</Text>
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.resetButton} onPress={resetAll}>
+        <Text style={styles.resetText}>すべてリセット</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -398,31 +394,13 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: '#999',
-    marginTop: 8,
-    marginBottom: 30,
     fontSize: 15,
-  },
-  coachBox: {
-    backgroundColor: '#1d4ed8',
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 20,
-  },
-  coachTitle: {
-    color: '#bfdbfe',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  coachText: {
-    color: 'white',
-    fontSize: 18,
-    lineHeight: 26,
-    fontWeight: 'bold',
+    marginTop: 8,
+    marginBottom: 28,
   },
   card: {
     backgroundColor: '#111',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 18,
     marginBottom: 20,
   },
@@ -440,105 +418,159 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
   },
-  aiTodo: {
-    color: '#60a5fa',
-    fontSize: 18,
-  },
-  suggestionRow: {
+  textarea: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
+    color: 'white',
     padding: 14,
-    marginBottom: 10,
+    borderRadius: 12,
+    marginBottom: 12,
+    fontSize: 16,
+    minHeight: 74,
+  },
+  row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: 12,
+  },
+  selectButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#333',
+    padding: 13,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  addSmall: {
-    color: '#60a5fa',
-    fontSize: 28,
+  selectText: {
+    color: '#aaa',
     fontWeight: 'bold',
   },
-  helpText: {
-    color: '#777',
-    fontSize: 13,
-    marginTop: 4,
-  },
-  categorySmall: {
-    color: '#888',
-    fontSize: 13,
-    marginTop: 4,
-  },
-  rateText: {
-    color: '#aaa',
-    fontSize: 16,
-  },
-  categoryTitle: {
-    color: '#aaa',
-    fontSize: 15,
-    marginBottom: 10,
-    marginTop: 6,
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  categoryButton: {
-    borderColor: '#333',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  selectedCategoryButton: {
+  selected: {
     backgroundColor: '#2563eb',
     borderColor: '#2563eb',
   },
-  categoryText: {
+  selectedText: {
+    color: 'white',
+  },
+  lifeBox: {
+    backgroundColor: '#111',
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  lifeLabel: {
     color: '#aaa',
-    fontSize: 14,
+    fontSize: 15,
+    marginBottom: 8,
+  },
+  lifeMain: {
+    color: 'white',
+    fontSize: 40,
     fontWeight: 'bold',
   },
-  selectedCategoryText: {
+  lifeSub: {
+    color: '#ccc',
+    fontSize: 17,
+    marginTop: 6,
+  },
+  lifeNote: {
+    color: '#777',
+    fontSize: 13,
+    marginTop: 14,
+  },
+  toneGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  toneButton: {
+    width: '48%',
+    borderWidth: 1,
+    borderColor: '#333',
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  toneText: {
+    color: '#aaa',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  chatBox: {
+    backgroundColor: '#0b1220',
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#1d4ed8',
+  },
+  aiName: {
+    color: '#60a5fa',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  question: {
     color: 'white',
+    fontSize: 20,
+    lineHeight: 30,
+    marginBottom: 16,
+    fontWeight: 'bold',
   },
   button: {
     backgroundColor: '#2563eb',
-    paddingVertical: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 15,
     borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 10,
   },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
   },
-  todoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  subButton: {
+    borderWidth: 1,
+    borderColor: '#60a5fa',
+    padding: 15,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 18,
   },
-  todoTextArea: {
-    flex: 1,
+  subButtonText: {
+    color: '#60a5fa',
+    fontWeight: 'bold',
   },
-  todo: {
+  history: {
+    color: '#ccc',
+    fontSize: 15,
+    lineHeight: 23,
+    marginBottom: 8,
+  },
+  planBox: {
+    backgroundColor: '#111',
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#2563eb',
+  },
+  sectionTitle: {
     color: 'white',
-    fontSize: 20,
-  },
-  deadline: {
-    color: '#888',
-    fontSize: 13,
-    marginTop: 5,
-  },
-  doneTodo: {
-    textDecorationLine: 'line-through',
-    color: '#666',
-  },
-  delete: {
-    color: 'red',
     fontSize: 18,
-    marginLeft: 10,
+    fontWeight: 'bold',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  resultText: {
+    color: '#ccc',
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  resetButton: {
+    alignItems: 'center',
+    padding: 20,
+    marginBottom: 40,
+  },
+  resetText: {
+    color: '#777',
   },
 });
