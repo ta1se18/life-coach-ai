@@ -26,7 +26,7 @@ type Todo = {
   deadline: string;
 };
 
-const STORAGE_KEY = 'life_todo_items_v4';
+const STORAGE_KEY = 'life_todo_items_v5';
 
 const categories: Category[] = [
   '事業',
@@ -61,6 +61,42 @@ export default function HomeScreen() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
   }, [todos]);
 
+  const completedCount = todos.filter((t) => t.done).length;
+  const achievementRate =
+    todos.length === 0 ? 0 : Math.round((completedCount / todos.length) * 100);
+
+  const coachComment = useMemo(() => {
+    if (todos.length === 0) {
+      return 'まずは1個でいい。今日の自分を前に進める行動を入れよう。';
+    }
+
+    if (achievementRate === 100) {
+      return '今日強すぎ。ちゃんと積み上げたな。この1日が未来の自分を作ってる。';
+    }
+
+    if (achievementRate >= 60) {
+      return 'かなりいい。全部完璧じゃなくても、前に進んでるなら勝ち。';
+    }
+
+    if (achievementRate >= 30) {
+      return '半分近く進めてる。明日はタスクを少し絞って、確実に取り切ろう。';
+    }
+
+    if (condition.includes('疲') || condition.includes('眠')) {
+      return '今日は回復も戦略。無理に詰め込むな。でも小さい一歩だけは残そう。';
+    }
+
+    if (mood.includes('やる気MAX')) {
+      return '今が攻め時。軽いタスクじゃなくて、一番未来に効くやつからいけ。';
+    }
+
+    if (mood.includes('不安') || mood.includes('焦')) {
+      return '不安な時ほど、頭の中で抱えるな。まず1個だけ書き出して潰そう。';
+    }
+
+    return 'まだ終わってない。今日を少しでも前に進めよう。1個でいいから潰せ。';
+  }, [achievementRate, todos.length, condition, mood]);
+
   const addTodo = () => {
     if (!todo.trim()) return;
 
@@ -88,10 +124,6 @@ export default function HomeScreen() {
   const deleteTodo = (id: string) => {
     setTodos(todos.filter((item) => item.id !== id));
   };
-
-  const completedCount = todos.filter((t) => t.done).length;
-  const achievementRate =
-    todos.length === 0 ? 0 : Math.round((completedCount / todos.length) * 100);
 
   const aiSuggestions = useMemo(() => {
     const result: { text: string; category: Category; deadline: string }[] = [];
@@ -188,6 +220,11 @@ export default function HomeScreen() {
       <Text style={styles.subtitle}>
         理想の人生と、今日の行動をつなぐ
       </Text>
+
+      <View style={styles.coachBox}>
+        <Text style={styles.coachTitle}>今日の相棒コメント</Text>
+        <Text style={styles.coachText}>{coachComment}</Text>
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>今日の状態</Text>
@@ -364,6 +401,24 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 30,
     fontSize: 15,
+  },
+  coachBox: {
+    backgroundColor: '#1d4ed8',
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 20,
+  },
+  coachTitle: {
+    color: '#bfdbfe',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  coachText: {
+    color: 'white',
+    fontSize: 18,
+    lineHeight: 26,
+    fontWeight: 'bold',
   },
   card: {
     backgroundColor: '#111',
