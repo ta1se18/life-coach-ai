@@ -1,232 +1,299 @@
-import React, { useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
 import {
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 
-type Gender = 'male' | 'female' | '';
-type Phase = 'input' | 'hearing' | 'plan';
+const STORAGE_KEY = 'life_coach_ai_v7';
 
-const MALE_LIFE = 81.09;
-const FEMALE_LIFE = 87.13;
+const MALE_LIFE_EXPECTANCY = 81.09;
+const FEMALE_LIFE_EXPECTANCY = 87.13;
+
+type AiTone = 'template' | 'hot' | 'encourage' | 'sister';
 
 export default function HomeScreen() {
-  const [phase, setPhase] = useState<Phase>('input');
-
   const [age, setAge] = useState('');
-  const [gender, setGender] = useState<Gender>('');
+  const [gender, setGender] = useState<'male' | 'female' | ''>('');
+  const [status, setStatus] = useState('');
+
+  const [todayFreeTime, setTodayFreeTime] = useState('');
+  const [todayCondition, setTodayCondition] = useState('');
+  const [todayMood, setTodayMood] = useState('');
+  const [yesterdayResult, setYesterdayResult] = useState('');
 
   const [likes, setLikes] = useState('');
   const [dislikes, setDislikes] = useState('');
-  const [past, setPast] = useState('');
   const [dream, setDream] = useState('');
+  const [past, setPast] = useState('');
 
-  const [worry, setWorry] = useState('');
+  const [shortTermPeriod, setShortTermPeriod] = useState('');
+  const [middleTermPeriod, setMiddleTermPeriod] = useState('');
+  const [longTermPeriod, setLongTermPeriod] = useState('');
+  const [goalPeriodReason, setGoalPeriodReason] = useState('');
+
+  const [aiTone, setAiTone] = useState<AiTone>('template');
+
+  const [deepLevel, setDeepLevel] = useState(0);
   const [deepAnswer, setDeepAnswer] = useState('');
-  const [deepStep, setDeepStep] = useState(0);
+  const [deepHistory, setDeepHistory] = useState<string[]>([]);
+  const [showPlan, setShowPlan] = useState(false);
 
-  const [shortTerm, setShortTerm] = useState('');
-  const [middleTerm, setMiddleTerm] = useState('');
-  const [longTerm, setLongTerm] = useState('');
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const life =
+  useEffect(() => {
+    saveData();
+  }, [
+    age,
+    gender,
+    status,
+    todayFreeTime,
+    todayCondition,
+    todayMood,
+    yesterdayResult,
+    likes,
+    dislikes,
+    dream,
+    past,
+    shortTermPeriod,
+    middleTermPeriod,
+    longTermPeriod,
+    goalPeriodReason,
+    aiTone,
+    deepLevel,
+    deepAnswer,
+    deepHistory,
+    showPlan,
+  ]);
+
+  const lifeExpectancy =
     gender === 'male'
-      ? MALE_LIFE
+      ? MALE_LIFE_EXPECTANCY
       : gender === 'female'
-      ? FEMALE_LIFE
+      ? FEMALE_LIFE_EXPECTANCY
       : 84;
 
   const currentAge = Number(age);
 
-  const remaining = useMemo(() => {
-    if (!currentAge) return null;
+  const remainingYears =
+    currentAge > 0 ? Math.max(lifeExpectancy - currentAge, 0) : 0;
 
-    const years = Math.max(life - currentAge, 0);
+  const remainingMonths = Math.floor(remainingYears * 12);
+  const remainingWeeks = Math.floor(remainingYears * 52);
+  const remainingDays = Math.floor(remainingYears * 365);
 
-    return {
-      years: years.toFixed(1),
-      months: Math.floor(years * 12),
-      weeks: Math.floor(years * 52),
-      days: Math.floor(years * 365),
+  const getCurrentQuestion = () => {
+    const questions = [
+      '本当に叶えたいことは何ですか？まだ夢がない場合は、「何者かになりたい」「今のままは嫌」でも大丈夫です。',
+      'それを叶えたい理由は何ですか？',
+      '逆に、このままだと何が一番嫌ですか？',
+      '今の自分にとって、一番のボトルネックは何だと思いますか？',
+      '今日使える時間の中で、どんな小さい行動なら現実的にできますか？',
+    ];
+
+    return questions[Math.min(deepLevel, questions.length - 1)];
+  };
+
+  const getToneMessage = () => {
+    if (aiTone === 'hot') {
+      return '甘えるな。理想の人生は、今日の積み上げでしか変わらない。';
+    }
+
+    if (aiTone === 'encourage') {
+      return '大丈夫。小さい一歩でも、積み重ねれば未来は変わる。';
+    }
+
+    if (aiTone === 'sister') {
+      return 'ちゃんと向き合えてるの偉いよ。でも考えるだけで終わらせないでね？';
+    }
+
+    return '分析完了。あなたの理想と現在地の差分を検出しました。今日の小さな行動が、未来の人生を変化させます。';
+  };
+
+  const saveDeepAnswerAndGoNext = () => {
+    if (deepAnswer.trim() !== '') {
+      setDeepHistory([...deepHistory, deepAnswer]);
+      setDeepAnswer('');
+    }
+
+    setDeepLevel(deepLevel + 1);
+    setShowPlan(false);
+  };
+
+  const makePlanNow = () => {
+    if (deepAnswer.trim() !== '') {
+      setDeepHistory([...deepHistory, deepAnswer]);
+      setDeepAnswer('');
+    }
+
+    setShowPlan(true);
+  };
+
+  const loadData = async () => {
+    const saved = await AsyncStorage.getItem(STORAGE_KEY);
+
+    if (!saved) return;
+
+    const data = JSON.parse(saved);
+
+    setAge(data.age || '');
+    setGender(data.gender || '');
+    setStatus(data.status || '');
+
+    setTodayFreeTime(data.todayFreeTime || '');
+    setTodayCondition(data.todayCondition || '');
+    setTodayMood(data.todayMood || '');
+    setYesterdayResult(data.yesterdayResult || '');
+
+    setLikes(data.likes || '');
+    setDislikes(data.dislikes || '');
+    setDream(data.dream || '');
+    setPast(data.past || '');
+
+    setShortTermPeriod(data.shortTermPeriod || '');
+    setMiddleTermPeriod(data.middleTermPeriod || '');
+    setLongTermPeriod(data.longTermPeriod || '');
+    setGoalPeriodReason(data.goalPeriodReason || '');
+
+    setAiTone(data.aiTone || 'template');
+
+    setDeepLevel(data.deepLevel || 0);
+    setDeepAnswer(data.deepAnswer || '');
+    setDeepHistory(data.deepHistory || []);
+
+    setShowPlan(data.showPlan || false);
+  };
+
+  const saveData = async () => {
+    const data = {
+      age,
+      gender,
+      status,
+      todayFreeTime,
+      todayCondition,
+      todayMood,
+      yesterdayResult,
+      likes,
+      dislikes,
+      dream,
+      past,
+      shortTermPeriod,
+      middleTermPeriod,
+      longTermPeriod,
+      goalPeriodReason,
+      aiTone,
+      deepLevel,
+      deepAnswer,
+      deepHistory,
+      showPlan,
     };
-  }, [currentAge, life]);
 
-  const deepQuestions = [
-    '最近、何にモヤモヤしてる？',
-    '本当はどんな人生にしたい？',
-    'それを望む理由は？',
-    'このままだと一番嫌な未来は？',
-    '今日できる最小の一歩は？',
-  ];
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  };
 
-  const currentQuestion =
-    deepQuestions[Math.min(deepStep, deepQuestions.length - 1)];
+  const resetData = async () => {
+    await AsyncStorage.removeItem(STORAGE_KEY);
 
-  const generatedPlan = useMemo(() => {
-    const lowerDream = dream.toLowerCase();
-    const lowerWorry = worry.toLowerCase();
+    setAge('');
+    setGender('');
+    setStatus('');
 
-    if (
-      lowerDream.includes('起業') ||
-      lowerDream.includes('事業')
-    ) {
-      return {
-        analysis:
-          'あなたは「挑戦」「自由」「自分で人生を切り開くこと」を強く求めている可能性があります。',
-        short:
-          'まずは営業力・発信力・継続力を鍛える。',
-        middle:
-          '市場理解・人脈・小さな収益化を経験する。',
-        long:
-          '自分の理想を形にできる事業を持つ。',
-        today: [
-          '競合サービスを1つ分析する',
-          '事業アイデアを10分書く',
-          '営業・マーケについて学ぶ',
-        ],
-      };
-    }
+    setTodayFreeTime('');
+    setTodayCondition('');
+    setTodayMood('');
+    setYesterdayResult('');
 
-    if (
-      lowerDream.includes('英語') ||
-      lowerDream.includes('toeic')
-    ) {
-      return {
-        analysis:
-          'あなたは「成長実感」と「世界を広げること」を大事にしている可能性があります。',
-        short:
-          '毎日英語に触れる習慣を作る。',
-        middle:
-          'TOEICや英会話で成果を出す。',
-        long:
-          '英語を使って世界を広げる。',
-        today: [
-          '英単語20個',
-          '英語YouTube15分',
-          '30分だけ集中学習',
-        ],
-      };
-    }
+    setLikes('');
+    setDislikes('');
+    setDream('');
+    setPast('');
 
-    if (
-      lowerDream.includes('筋トレ') ||
-      lowerDream.includes('健康')
-    ) {
-      return {
-        analysis:
-          'あなたは「自信」「自己管理」「理想の自分」を求めている可能性があります。',
-        short:
-          '睡眠・食事・運動を整える。',
-        middle:
-          '継続できる身体習慣を作る。',
-        long:
-          '健康で自信のある状態を維持する。',
-        today: [
-          '筋トレ20分',
-          '睡眠7時間',
-          '高タンパク食事',
-        ],
-      };
-    }
+    setShortTermPeriod('');
+    setMiddleTermPeriod('');
+    setLongTermPeriod('');
+    setGoalPeriodReason('');
 
-    if (
-      lowerDream.includes('恋愛') ||
-      lowerDream.includes('彼女') ||
-      lowerDream.includes('彼氏')
-    ) {
-      return {
-        analysis:
-          'あなたは「愛されたい」「人と深く繋がりたい」気持ちが強い可能性があります。',
-        short:
-          '清潔感・会話力・自己肯定感を整える。',
-        middle:
-          '人との関係構築経験を増やす。',
-        long:
-          '安心できるパートナーシップを作る。',
-        today: [
-          '外見を整える',
-          '人と会話する',
-          '自信を失う行動を減らす',
-        ],
-      };
-    }
+    setAiTone('template');
 
-    if (
-      lowerWorry.includes('不安') ||
-      lowerWorry.includes('焦り')
-    ) {
-      return {
-        analysis:
-          '今は「努力不足」よりも、「方向性不足」で苦しくなっている可能性があります。',
-        short:
-          'まずはやることを減らす。',
-        middle:
-          '自分の軸を見つける。',
-        long:
-          '迷いが少ない人生設計を作る。',
-        today: [
-          'モヤモヤを書き出す',
-          'やることを1つに絞る',
-          '今日は早めに寝る',
-        ],
-      };
-    }
+    setDeepLevel(0);
+    setDeepAnswer('');
+    setDeepHistory([]);
 
-    return {
-      analysis:
-        'あなたはまだ言語化できていないけど、「このままで終わりたくない」と感じている可能性があります。',
-      short:
-        'まずは自己理解を深める。',
-      middle:
-        '小さな挑戦を増やす。',
-      long:
-        '理想の人生像を見つける。',
-      today: [
-        '理想の人生を書き出す',
-        '興味あることを調べる',
-        '小さく1歩進む',
-      ],
-    };
-  }, [dream, worry]);
+    setShowPlan(false);
+  };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.logo}>LIFE COARCH AI</Text>
+    <ScrollView style={{ flex: 1, backgroundColor: '#f7f7f7' }}>
+      <View style={{ padding: 24, marginTop: 50 }}>
+        <Text style={styles.title}>LIFE COACH AI 🔥</Text>
 
-      <Text style={styles.subtitle}>
-        理想の人生と、今日の行動をつなぐAI
-      </Text>
+        <Text style={styles.subtitle}>
+          理想の人生に向けて、AIと共に行動を設計する。
+        </Text>
 
-      {phase === 'input' && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            人生の現在地
-          </Text>
+          <Text style={styles.cardTitle}>AIの話し方</Text>
+
+          <View style={styles.toneGrid}>
+            {[
+              ['template', 'AIっぽさ全開系'],
+              ['hot', '熱血タイプ'],
+              ['encourage', '励まし系'],
+              ['sister', 'お姉さん系'],
+            ].map(([value, label]) => (
+              <TouchableOpacity
+                key={value}
+                style={[
+                  styles.toneButton,
+                  aiTone === value && styles.selectedButton,
+                ]}
+                onPress={() => setAiTone(value as AiTone)}
+              >
+                <Text
+                  style={[
+                    styles.toneText,
+                    aiTone === value && styles.selectedText,
+                  ]}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>人生の現在地</Text>
+
+          <Text style={styles.label}>年齢</Text>
 
           <TextInput
-            style={styles.input}
-            placeholder="年齢"
-            placeholderTextColor="#999"
             value={age}
             onChangeText={setAge}
+            placeholder="例：22"
+            placeholderTextColor="#999"
             keyboardType="numeric"
+            style={styles.input}
           />
+
+          <Text style={styles.label}>性別</Text>
 
           <View style={styles.row}>
             <TouchableOpacity
               style={[
-                styles.choice,
-                gender === 'male' && styles.selected,
+                styles.genderButton,
+                gender === 'male' && styles.selectedButton,
               ]}
               onPress={() => setGender('male')}
             >
               <Text
                 style={[
-                  styles.choiceText,
+                  styles.genderText,
                   gender === 'male' && styles.selectedText,
                 ]}
               >
@@ -236,14 +303,14 @@ export default function HomeScreen() {
 
             <TouchableOpacity
               style={[
-                styles.choice,
-                gender === 'female' && styles.selected,
+                styles.genderButton,
+                gender === 'female' && styles.selectedButton,
               ]}
               onPress={() => setGender('female')}
             >
               <Text
                 style={[
-                  styles.choiceText,
+                  styles.genderText,
                   gender === 'female' && styles.selectedText,
                 ]}
               >
@@ -252,408 +319,515 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {remaining && (
-            <View style={styles.lifeBox}>
-              <Text style={styles.lifeTitle}>
-                残された時間
-              </Text>
+          <Text style={styles.label}>今の立場</Text>
 
-              <Text style={styles.lifeMain}>
-                約 {remaining.years} 年
-              </Text>
+          <TextInput
+            value={status}
+            onChangeText={setStatus}
+            placeholder="例：大学生、社会人、高校生"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+        </View>
 
-              <Text style={styles.lifeSub}>
-                約 {remaining.months} ヶ月
-              </Text>
+        {currentAge > 0 && gender !== '' && (
+          <View style={styles.lifeBox}>
+            <Text style={styles.lifeTitle}>残された時間</Text>
 
-              <Text style={styles.lifeSub}>
-                約 {remaining.weeks} 週間
-              </Text>
+            <Text style={styles.lifeText}>
+              約 {remainingYears.toFixed(1)} 年
+            </Text>
 
-              <Text style={styles.lifeSub}>
-                約 {remaining.days} 日
-              </Text>
+            <Text style={styles.lifeSub}>
+              約 {remainingMonths} ヶ月
+            </Text>
 
-              <Text style={styles.note}>
-                時間は有限。だから今日を決める。
-              </Text>
-            </View>
-          )}
+            <Text style={styles.lifeSub}>
+              約 {remainingWeeks} 週間
+            </Text>
+
+            <Text style={styles.lifeSub}>
+              約 {remainingDays} 日
+            </Text>
+
+            <Text style={styles.note}>
+              時間は有限。今日の行動が未来を作る。
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>今日の状態</Text>
+
+          <Text style={styles.smallText}>
+            朝〜午前中に入力して、今日の行動を決める想定。
+          </Text>
+
+          <Text style={styles.label}>今日使える自由時間</Text>
+
+          <TextInput
+            value={todayFreeTime}
+            onChangeText={setTodayFreeTime}
+            placeholder="例：2時間、30分、今日はほぼなし"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+
+          <Text style={styles.label}>今日の体調</Text>
+
+          <TextInput
+            value={todayCondition}
+            onChangeText={setTodayCondition}
+            placeholder="例：元気、眠い、疲れてる、熱37.5度"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+
+          <Text style={styles.label}>今日の気分</Text>
+
+          <TextInput
+            value={todayMood}
+            onChangeText={setTodayMood}
+            placeholder="例：やる気MAX、やる気なし、普通、焦り、不安"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+
+          <Text style={styles.label}>昨日の達成率</Text>
+
+          <TextInput
+            value={yesterdayResult}
+            onChangeText={setYesterdayResult}
+            placeholder="例：0%、30%、50%、80%、100%"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>自己理解ヒアリング</Text>
+
+          <Text style={styles.label}>好きなこと</Text>
+
+          <TextInput
+            value={likes}
+            onChangeText={setLikes}
+            placeholder="例：スポーツ、YouTube、社会貢献、食べ歩き、人間観察"
+            placeholderTextColor="#999"
+            multiline
+            style={styles.inputLarge}
+          />
+
+          <Text style={styles.label}>嫌いなこと</Text>
+
+          <TextInput
+            value={dislikes}
+            onChangeText={setDislikes}
+            placeholder="例：早起き、舐められること、英語、掃除"
+            placeholderTextColor="#999"
+            multiline
+            style={styles.inputLarge}
+          />
+
+          <Text style={styles.label}>夢・なりたい姿</Text>
+
+          <TextInput
+            value={dream}
+            onChangeText={setDream}
+            placeholder="例：起業、大谷翔平みたいになりたい、良いパパになりたい、まだ分からない"
+            placeholderTextColor="#999"
+            multiline
+            style={styles.inputLarge}
+          />
+
+          <Text style={styles.label}>過去の経験</Text>
+
+          <TextInput
+            value={past}
+            onChangeText={setPast}
+            placeholder="例：夢中、後悔、大恋愛、人生の転機、学校行事、大喧嘩、感動"
+            placeholderTextColor="#999"
+            multiline
+            style={styles.inputLarge}
+          />
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>目標期間</Text>
+
+          <Text style={styles.smallText}>
+            短期・中期・長期の期間は、人によって違ってOK。
+          </Text>
+
+          <Text style={styles.label}>短期</Text>
+
+          <TextInput
+            value={shortTermPeriod}
+            onChangeText={setShortTermPeriod}
+            placeholder="例：1週間、1ヶ月、3ヶ月、1年"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+
+          <Text style={styles.label}>中期</Text>
+
+          <TextInput
+            value={middleTermPeriod}
+            onChangeText={setMiddleTermPeriod}
+            placeholder="例：6ヶ月、1年、3年、5年"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+
+          <Text style={styles.label}>長期</Text>
+
+          <TextInput
+            value={longTermPeriod}
+            onChangeText={setLongTermPeriod}
+            placeholder="例：5年、10年、20年、人生全体"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+
+          <Text style={styles.label}>
+            期間を決められない場合
+          </Text>
+
+          <TextInput
+            value={goalPeriodReason}
+            onChangeText={setGoalPeriodReason}
+            placeholder="決められない場合：AIと対話で決定！"
+            placeholderTextColor="#999"
+            multiline
+            style={styles.inputLarge}
+          />
+        </View>
+
+        <View style={styles.resultBox}>
+          <Text style={styles.resultTitle}>
+            深掘り質問 {deepLevel + 1}
+          </Text>
+
+          <Text style={styles.resultText}>
+            {getCurrentQuestion()}
+          </Text>
+
+          <Text style={styles.label}>回答</Text>
+
+          <TextInput
+            value={deepAnswer}
+            onChangeText={setDeepAnswer}
+            placeholder="今思っていることをそのまま書く"
+            placeholderTextColor="#999"
+            multiline
+            style={styles.inputLarge}
+          />
 
           <TouchableOpacity
             style={styles.button}
-            onPress={() => setPhase('hearing')}
+            onPress={saveDeepAnswerAndGoNext}
           >
             <Text style={styles.buttonText}>
-              AIヒアリングへ進む
+              もう少し深掘りする
             </Text>
           </TouchableOpacity>
-        </View>
-      )}
-
-      {phase === 'hearing' && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            AIヒアリング
-          </Text>
-
-          <TextInput
-            style={styles.textarea}
-            placeholder="好き：スポーツ、YouTube、社会貢献、人間観察"
-            placeholderTextColor="#999"
-            value={likes}
-            onChangeText={setLikes}
-            multiline
-          />
-
-          <TextInput
-            style={styles.textarea}
-            placeholder="嫌い：早起き、舐められること、英語、掃除"
-            placeholderTextColor="#999"
-            value={dislikes}
-            onChangeText={setDislikes}
-            multiline
-          />
-
-          <TextInput
-            style={styles.textarea}
-            placeholder="過去：夢中、後悔、大恋愛、人生の転機"
-            placeholderTextColor="#999"
-            value={past}
-            onChangeText={setPast}
-            multiline
-          />
-
-          <TextInput
-            style={styles.textarea}
-            placeholder="夢・なりたい姿"
-            placeholderTextColor="#999"
-            value={dream}
-            onChangeText={setDream}
-            multiline
-          />
-
-          <TextInput
-            style={styles.textarea}
-            placeholder="今の悩み・モヤモヤ"
-            placeholderTextColor="#999"
-            value={worry}
-            onChangeText={setWorry}
-            multiline
-          />
-
-          <View style={styles.chatBox}>
-            <Text style={styles.aiLabel}>
-              AIからの深掘り
-            </Text>
-
-            <Text style={styles.question}>
-              {currentQuestion}
-            </Text>
-
-            <TextInput
-              style={styles.textarea}
-              placeholder="今の気持ちをそのまま書く"
-              placeholderTextColor="#999"
-              value={deepAnswer}
-              onChangeText={setDeepAnswer}
-              multiline
-            />
-
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => setDeepStep(deepStep + 1)}
-            >
-              <Text style={styles.buttonText}>
-                もう少し深掘りする
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.subButton}
-              onPress={() => setPhase('plan')}
-            >
-              <Text style={styles.subButtonText}>
-                ここまでで計画を作る
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {phase === 'plan' && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            人生計画 ver.1
-          </Text>
-
-          <Text style={styles.analysis}>
-            {generatedPlan.analysis}
-          </Text>
-
-          <Text style={styles.sectionTitle}>
-            短期計画
-          </Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="例：2週間、1ヶ月"
-            placeholderTextColor="#999"
-            value={shortTerm}
-            onChangeText={setShortTerm}
-          />
-
-          <Text style={styles.resultText}>
-            {generatedPlan.short}
-          </Text>
-
-          <Text style={styles.sectionTitle}>
-            中期計画
-          </Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="例：6ヶ月、1年"
-            placeholderTextColor="#999"
-            value={middleTerm}
-            onChangeText={setMiddleTerm}
-          />
-
-          <Text style={styles.resultText}>
-            {generatedPlan.middle}
-          </Text>
-
-          <Text style={styles.sectionTitle}>
-            長期計画
-          </Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="例：5年、10年"
-            placeholderTextColor="#999"
-            value={longTerm}
-            onChangeText={setLongTerm}
-          />
-
-          <Text style={styles.resultText}>
-            {generatedPlan.long}
-          </Text>
-
-          <Text style={styles.sectionTitle}>
-            今日の行動
-          </Text>
-
-          {generatedPlan.today.map((item, index) => (
-            <Text key={index} style={styles.todo}>
-              ・{item}
-            </Text>
-          ))}
 
           <TouchableOpacity
             style={styles.subButton}
-            onPress={() => setPhase('hearing')}
+            onPress={makePlanNow}
           >
             <Text style={styles.subButtonText}>
-              もう一度深掘りする
+              ここまでで計画を作る
             </Text>
           </TouchableOpacity>
         </View>
-      )}
+
+        {showPlan && (
+          <View style={styles.resultBox}>
+            <Text style={styles.resultTitle}>
+              人生計画 ver.1
+            </Text>
+
+            <Text style={styles.sectionTitle}>
+              短期目標
+            </Text>
+
+            <Text style={styles.resultText}>
+              期間：{shortTermPeriod || '未設定'}
+              {'\n'}
+              今日使える時間「{todayFreeTime || '未入力'}」
+              の中で、まず小さく動ける行動を決める。
+            </Text>
+
+            <Text style={styles.sectionTitle}>
+              中期目標
+            </Text>
+
+            <Text style={styles.resultText}>
+              期間：{middleTermPeriod || '未設定'}
+              {'\n'}
+              好きなこと・嫌いなこと・過去経験から、
+              自分の方向性を形にする。
+            </Text>
+
+            <Text style={styles.sectionTitle}>
+              長期目標
+            </Text>
+
+            <Text style={styles.resultText}>
+              期間：{longTermPeriod || '未設定'}
+              {'\n'}
+              {dream || '自分の理想を見つける'}
+              に近づく人生設計をする。
+            </Text>
+
+            <Text style={styles.sectionTitle}>
+              今日やるべきこと候補
+            </Text>
+
+            <Text style={styles.resultText}>
+              1. 理想の人生について10分書き出す
+              {'\n'}
+              2. 好きなこと「{likes || '未入力'}」
+              に関係する行動を1つやる
+              {'\n'}
+              3. 今日の最後に、行動できた理由を記録する
+            </Text>
+
+            <Text style={styles.sectionTitle}>
+              相棒からの一言
+            </Text>
+
+            <Text style={styles.resultText}>
+              {getToneMessage()}
+            </Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={resetData}
+        >
+          <Text style={styles.resetButtonText}>
+            すべてリセット
+          </Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 70,
-    paddingHorizontal: 20,
-  },
-
-  logo: {
-    color: '#111',
-    fontSize: 36,
-    fontWeight: 'bold',
+const styles = {
+  title: {
+    fontSize: 30,
+    fontWeight: 'bold' as const,
+    marginBottom: 8,
   },
 
   subtitle: {
-    color: '#666',
     fontSize: 15,
-    marginTop: 8,
-    marginBottom: 28,
+    color: '#555',
+    marginBottom: 24,
   },
 
   card: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 18,
+    backgroundColor: '#fff',
     padding: 18,
-    marginBottom: 20,
+    borderRadius: 14,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
 
   cardTitle: {
-    color: '#111',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontSize: 22,
+    fontWeight: 'bold' as const,
+    marginBottom: 12,
+  },
+
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold' as const,
+    marginBottom: 6,
+  },
+
+  smallText: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 14,
   },
 
   input: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#ddd',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    fontSize: 15,
   },
 
-  textarea: {
+  inputLarge: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    marginBottom: 12,
-    minHeight: 90,
     borderWidth: 1,
     borderColor: '#ddd',
+    borderRadius: 10,
+    padding: 12,
+    minHeight: 70,
+    marginBottom: 18,
+    fontSize: 15,
   },
 
   row: {
-    flexDirection: 'row',
+    flexDirection: 'row' as const,
     gap: 10,
     marginBottom: 16,
   },
 
-  choice: {
+  genderButton: {
     flex: 1,
-    padding: 14,
-    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#ddd',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center' as const,
   },
 
-  choiceText: {
+  selectedButton: {
+    backgroundColor: '#111',
+    borderColor: '#111',
+  },
+
+  genderText: {
     color: '#111',
-    fontWeight: 'bold',
-  },
-
-  selected: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
+    fontWeight: 'bold' as const,
   },
 
   selectedText: {
     color: '#fff',
   },
 
+  toneGrid: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: 10,
+  },
+
+  toneButton: {
+    width: '48%' as const,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center' as const,
+    backgroundColor: '#fff',
+  },
+
+  toneText: {
+    color: '#111',
+    fontWeight: 'bold' as const,
+  },
+
   lifeBox: {
     backgroundColor: '#111',
-    borderRadius: 18,
     padding: 18,
+    borderRadius: 14,
     marginBottom: 18,
   },
 
   lifeTitle: {
-    color: '#aaa',
-    fontSize: 15,
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold' as const,
+    marginBottom: 10,
   },
 
-  lifeMain: {
+  lifeText: {
     color: '#fff',
-    fontSize: 38,
-    fontWeight: 'bold',
-    marginTop: 8,
+    fontSize: 34,
+    fontWeight: 'bold' as const,
   },
 
   lifeSub: {
     color: '#ddd',
-    fontSize: 17,
-    marginTop: 6,
+    fontSize: 16,
+    marginTop: 4,
   },
 
   note: {
-    color: '#aaa',
-    marginTop: 12,
+    color: '#bbb',
     fontSize: 13,
+    marginTop: 12,
   },
 
   button: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#111',
     padding: 15,
-    borderRadius: 12,
-    alignItems: 'center',
+    borderRadius: 10,
+    alignItems: 'center' as const,
     marginTop: 8,
+    marginBottom: 10,
   },
 
   buttonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: 'bold' as const,
   },
 
   subButton: {
-    borderWidth: 1,
-    borderColor: '#2563eb',
+    backgroundColor: '#fff',
     padding: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 10,
+    borderRadius: 10,
+    alignItems: 'center' as const,
+    borderWidth: 1,
+    borderColor: '#111',
+    marginBottom: 8,
   },
 
   subButtonText: {
-    color: '#2563eb',
-    fontWeight: 'bold',
-  },
-
-  chatBox: {
-    backgroundColor: '#eef4ff',
-    borderRadius: 18,
-    padding: 18,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#bfdbfe',
-  },
-
-  aiLabel: {
-    color: '#2563eb',
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-
-  question: {
     color: '#111',
-    fontSize: 22,
-    lineHeight: 32,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: 'bold' as const,
+  },
+
+  resultBox: {
+    backgroundColor: '#fff',
+    padding: 18,
+    borderRadius: 14,
+    marginTop: 10,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+
+  resultTitle: {
+    fontSize: 24,
+    fontWeight: 'bold' as const,
     marginBottom: 16,
   },
 
-  analysis: {
-    color: '#111',
-    fontSize: 18,
-    lineHeight: 30,
-    marginBottom: 20,
-  },
-
   sectionTitle: {
-    color: '#111',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 14,
-    marginBottom: 8,
+    fontSize: 17,
+    fontWeight: 'bold' as const,
+    marginTop: 12,
+    marginBottom: 6,
   },
 
   resultText: {
+    fontSize: 15,
+    lineHeight: 22,
     color: '#333',
-    fontSize: 16,
-    lineHeight: 26,
   },
 
-  todo: {
-    color: '#111',
-    fontSize: 16,
-    lineHeight: 28,
+  resetButton: {
+    padding: 12,
+    alignItems: 'center' as const,
+    marginBottom: 40,
   },
-});
+
+  resetButtonText: {
+    color: '#777',
+    fontSize: 14,
+  },
+};
