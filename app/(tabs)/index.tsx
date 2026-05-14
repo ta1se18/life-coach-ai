@@ -13,11 +13,11 @@ const STORAGE_KEY = 'life_coach_ai_v7';
 const MALE_LIFE_EXPECTANCY = 81.09;
 const FEMALE_LIFE_EXPECTANCY = 87.13;
 
-type AiTone = 'template' | 'hot' | 'encourage' | 'sister';
+type AiTone = string;
 
 export default function HomeScreen() {
   const [age, setAge] = useState('');
-  const [gender, setGender] = useState<'male' | 'female' | ''>('');
+  const [gender, setGender] = useState('');
   const [status, setStatus] = useState('');
 
   const [todayFreeTime, setTodayFreeTime] = useState('');
@@ -31,8 +31,14 @@ export default function HomeScreen() {
   const [past, setPast] = useState('');
 
   const [shortTermPeriod, setShortTermPeriod] = useState('');
+  const [shortTermGoal, setShortTermGoal] = useState('');
+  const [shortTermWhy, setShortTermWhy] = useState('');
   const [middleTermPeriod, setMiddleTermPeriod] = useState('');
+  const [middleTermGoal, setMiddleTermGoal] = useState('');
+  const [middleTermWhy, setMiddleTermWhy] = useState('');
   const [longTermPeriod, setLongTermPeriod] = useState('');
+  const [longTermGoal, setLongTermGoal] = useState('');
+  const [longTermWhy, setLongTermWhy] = useState('');
   const [goalPeriodReason, setGoalPeriodReason] = useState('');
 
   const [aiTone, setAiTone] = useState<AiTone>('template');
@@ -61,8 +67,14 @@ export default function HomeScreen() {
     dream,
     past,
     shortTermPeriod,
+    shortTermGoal,
+    shortTermWhy,
     middleTermPeriod,
+    middleTermGoal,
+    middleTermWhy,
     longTermPeriod,
+    longTermGoal,
+    longTermWhy,
     goalPeriodReason,
     aiTone,
     deepLevel,
@@ -71,10 +83,16 @@ export default function HomeScreen() {
     showPlan,
   ]);
 
+  const normalizedGender = gender.trim().toLowerCase();
+
   const lifeExpectancy =
-    gender === 'male'
+    normalizedGender === 'male' ||
+    normalizedGender === '男性' ||
+    normalizedGender.includes('男')
       ? MALE_LIFE_EXPECTANCY
-      : gender === 'female'
+      : normalizedGender === 'female' ||
+        normalizedGender === '女性' ||
+        normalizedGender.includes('女')
       ? FEMALE_LIFE_EXPECTANCY
       : 84;
 
@@ -156,8 +174,14 @@ export default function HomeScreen() {
     setPast(data.past || '');
 
     setShortTermPeriod(data.shortTermPeriod || '');
+    setShortTermGoal(data.shortTermGoal || '');
+    setShortTermWhy(data.shortTermWhy || '');
     setMiddleTermPeriod(data.middleTermPeriod || '');
+    setMiddleTermGoal(data.middleTermGoal || '');
+    setMiddleTermWhy(data.middleTermWhy || '');
     setLongTermPeriod(data.longTermPeriod || '');
+    setLongTermGoal(data.longTermGoal || '');
+    setLongTermWhy(data.longTermWhy || '');
     setGoalPeriodReason(data.goalPeriodReason || '');
 
     setAiTone(data.aiTone || 'template');
@@ -183,8 +207,14 @@ export default function HomeScreen() {
       dream,
       past,
       shortTermPeriod,
+      shortTermGoal,
+      shortTermWhy,
       middleTermPeriod,
+      middleTermGoal,
+      middleTermWhy,
       longTermPeriod,
+      longTermGoal,
+      longTermWhy,
       goalPeriodReason,
       aiTone,
       deepLevel,
@@ -214,8 +244,14 @@ export default function HomeScreen() {
     setPast('');
 
     setShortTermPeriod('');
+    setShortTermGoal('');
+    setShortTermWhy('');
     setMiddleTermPeriod('');
+    setMiddleTermGoal('');
+    setMiddleTermWhy('');
     setLongTermPeriod('');
+    setLongTermGoal('');
+    setLongTermWhy('');
     setGoalPeriodReason('');
 
     setAiTone('template');
@@ -239,32 +275,18 @@ export default function HomeScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>AIの話し方</Text>
 
-          <View style={styles.toneGrid}>
-            {[
-              ['template', 'AIっぽさ全開系'],
-              ['hot', '熱血タイプ'],
-              ['encourage', '励まし系'],
-              ['sister', 'お姉さん系'],
-            ].map(([value, label]) => (
-              <TouchableOpacity
-                key={value}
-                style={[
-                  styles.toneButton,
-                  aiTone === value && styles.selectedButton,
-                ]}
-                onPress={() => setAiTone(value as AiTone)}
-              >
-                <Text
-                  style={[
-                    styles.toneText,
-                    aiTone === value && styles.selectedText,
-                  ]}
-                >
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <Text style={styles.smallText}>
+            例：AIっぽさ全開系、熱血タイプ、励まし系、お姉さん系
+          </Text>
+
+          <TextInput
+            value={aiTone}
+            onChangeText={setAiTone}
+            placeholder="例：熱血タイプ"
+            placeholderTextColor="#999"
+            autoCapitalize="none"
+            style={styles.input}
+          />
         </View>
 
         <View style={styles.card}>
@@ -283,41 +305,13 @@ export default function HomeScreen() {
 
           <Text style={styles.label}>性別</Text>
 
-          <View style={styles.row}>
-            <TouchableOpacity
-              style={[
-                styles.genderButton,
-                gender === 'male' && styles.selectedButton,
-              ]}
-              onPress={() => setGender('male')}
-            >
-              <Text
-                style={[
-                  styles.genderText,
-                  gender === 'male' && styles.selectedText,
-                ]}
-              >
-                男性
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.genderButton,
-                gender === 'female' && styles.selectedButton,
-              ]}
-              onPress={() => setGender('female')}
-            >
-              <Text
-                style={[
-                  styles.genderText,
-                  gender === 'female' && styles.selectedText,
-                ]}
-              >
-                女性
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TextInput
+            value={gender}
+            onChangeText={setGender}
+            placeholder="例：男性、女性"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
 
           <Text style={styles.label}>今の立場</Text>
 
@@ -330,7 +324,7 @@ export default function HomeScreen() {
           />
         </View>
 
-        {currentAge > 0 &&　(
+        {currentAge > 0 && (
           <View style={styles.lifeBox}>
             <Text style={styles.lifeTitle}>残された時間</Text>
 
@@ -456,21 +450,37 @@ export default function HomeScreen() {
           <Text style={styles.cardTitle}>目標期間</Text>
 
           <Text style={styles.smallText}>
-            短期・中期・長期の期間は、人によって違ってOK。
+            短期・中期・長期の期間は人によって違ってOK。各目標に
+            期間、目標内容、達成したい理由を入力しましょう。
           </Text>
 
-          <Text style={styles.label}>短期</Text>
-
+          <Text style={styles.sectionTitle}>短期</Text>
           <TextInput
             value={shortTermPeriod}
             onChangeText={setShortTermPeriod}
-            placeholder="例：1週間、1ヶ月、3ヶ月、1年"
+            placeholder="例：1週間、1ヶ月、3ヶ月"
             placeholderTextColor="#999"
             style={styles.input}
           />
+          <Text style={styles.label}>短期目標</Text>
+          <TextInput
+            value={shortTermGoal}
+            onChangeText={setShortTermGoal}
+            placeholder="例：毎日30分勉強する"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+          <Text style={styles.label}>なぜ達成したいか</Text>
+          <TextInput
+            value={shortTermWhy}
+            onChangeText={setShortTermWhy}
+            placeholder="例：受験に合格して安心したい"
+            placeholderTextColor="#999"
+            multiline
+            style={styles.inputLarge}
+          />
 
-          <Text style={styles.label}>中期</Text>
-
+          <Text style={styles.sectionTitle}>中期</Text>
           <TextInput
             value={middleTermPeriod}
             onChangeText={setMiddleTermPeriod}
@@ -478,9 +488,25 @@ export default function HomeScreen() {
             placeholderTextColor="#999"
             style={styles.input}
           />
+          <Text style={styles.label}>中期目標</Text>
+          <TextInput
+            value={middleTermGoal}
+            onChangeText={setMiddleTermGoal}
+            placeholder="例：英語力を伸ばす、資格を取る"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+          <Text style={styles.label}>なぜ達成したいか</Text>
+          <TextInput
+            value={middleTermWhy}
+            onChangeText={setMiddleTermWhy}
+            placeholder="例：将来の選択肢を増やしたい"
+            placeholderTextColor="#999"
+            multiline
+            style={styles.inputLarge}
+          />
 
-          <Text style={styles.label}>長期</Text>
-
+          <Text style={styles.sectionTitle}>長期</Text>
           <TextInput
             value={longTermPeriod}
             onChangeText={setLongTermPeriod}
@@ -488,11 +514,25 @@ export default function HomeScreen() {
             placeholderTextColor="#999"
             style={styles.input}
           />
+          <Text style={styles.label}>長期目標</Text>
+          <TextInput
+            value={longTermGoal}
+            onChangeText={setLongTermGoal}
+            placeholder="例：自分の会社を持つ、理想の家族を作る"
+            placeholderTextColor="#999"
+            style={styles.input}
+          />
+          <Text style={styles.label}>なぜ達成したいか</Text>
+          <TextInput
+            value={longTermWhy}
+            onChangeText={setLongTermWhy}
+            placeholder="例：自分らしい生活を手に入れたい"
+            placeholderTextColor="#999"
+            multiline
+            style={styles.inputLarge}
+          />
 
-          <Text style={styles.label}>
-            期間を決められない場合
-          </Text>
-
+          <Text style={styles.label}>期間を決められない場合</Text>
           <TextInput
             value={goalPeriodReason}
             onChangeText={setGoalPeriodReason}
@@ -555,8 +595,9 @@ export default function HomeScreen() {
             <Text style={styles.resultText}>
               期間：{shortTermPeriod || '未設定'}
               {'\n'}
-              今日使える時間「{todayFreeTime || '未入力'}」
-              の中で、まず小さく動ける行動を決める。
+              目標：{shortTermGoal || '未設定'}
+              {'\n'}
+              なぜ：{shortTermWhy || 'まだ入力されていません'}
             </Text>
 
             <Text style={styles.sectionTitle}>
@@ -566,8 +607,9 @@ export default function HomeScreen() {
             <Text style={styles.resultText}>
               期間：{middleTermPeriod || '未設定'}
               {'\n'}
-              好きなこと・嫌いなこと・過去経験から、
-              自分の方向性を形にする。
+              目標：{middleTermGoal || '未設定'}
+              {'\n'}
+              なぜ：{middleTermWhy || 'まだ入力されていません'}
             </Text>
 
             <Text style={styles.sectionTitle}>
@@ -577,8 +619,9 @@ export default function HomeScreen() {
             <Text style={styles.resultText}>
               期間：{longTermPeriod || '未設定'}
               {'\n'}
-              {dream || '自分の理想を見つける'}
-              に近づく人生設計をする。
+              目標：{longTermGoal || '未設定'}
+              {'\n'}
+              なぜ：{longTermWhy || 'まだ入力されていません'}
             </Text>
 
             <Text style={styles.sectionTitle}>
